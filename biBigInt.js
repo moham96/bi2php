@@ -150,14 +150,14 @@ function biCopy(bi){
 	var result = new BigInt(true);
 	result.digits = bi.digits.slice(0);
 	result.isNeg = bi.isNeg;
-	return result;
+	return biNormalize(result);
 }
 
 function biAbs(bi){
 	var result = new BigInt(true);
 	result.digits = bi.digits.slice(0);
 	result.isNeg = false;
-	return result;
+	return biNormalize(result);
 }
 
 function biFromNumber(i){
@@ -507,7 +507,7 @@ function biMultiplyDigit(x, y){
 	return biRecreate(result);
 }
 
-function arrayCopy(src, srcStart, dest, destStart, n){
+function arrayCopy(src, srcStart, dest, destStart, count){
 	if (srcStart >= src.length){
 		if (dest.length == 0)
 			dest[0] = 0
@@ -515,7 +515,7 @@ function arrayCopy(src, srcStart, dest, destStart, n){
 	}
 	for (var i = 0; i < destStart; i++)
 		dest[i] = 0;
-	var m = Math.min(srcStart + n, src.length);
+	var m = Math.min(srcStart + count, src.length);
 	for (var i = srcStart, j = destStart; i < m; ++i, ++j)
 		dest[j] = src[i];
 	//biNormalize(dest);
@@ -563,14 +563,14 @@ function biShiftRight(x, n){
 function biMultiplyByRadixPower(x, n)
 {
 	var result = new BigInt();
-	arrayCopy(x.digits, 0, result.digits, n, result.digits.length - n);
+	arrayCopy(x.digits, 0, result.digits, n, x.digits.length);
 	return result;
 }
 
 function biDivideByRadixPower(x, n)
 {
 	var result = new BigInt();
-	arrayCopy(x.digits, n, result.digits, 0, result.digits.length - n);
+	arrayCopy(x.digits, n, result.digits, 0, x.digits.length - n);
 	return result;
 }
 
@@ -598,32 +598,31 @@ function biCompare(x, y)
 	return 0;
 }
 
-function biDivideModulo(x, y)
-{
+function biDivideModulo(x, y){
 	var nb = biNumBits(x);
+	var nh = biHighIndex(x);
 	var tb = biNumBits(y);
+	var th = biHighIndex(y);
+	var origXIsNeg = x.isNeg;
 	var origYIsNeg = y.isNeg;
-	var q, r;
-	if (nb < tb) {
+	var origX = x;
+	var origY = y;
+
+	if (nb < tb  || (nb == tb && biCompareAbs(x, y) < 0)) {
 		// |x| < |y|
-		if (x.isNeg) {
-			q = biCopy(bigOne);
-			q.isNeg = !y.isNeg;
-			x.isNeg = false;
-			y.isNeg = false;
-			r = biSubtract(y, x);
-			// Restore signs, 'cause they're references.
-			x.isNeg = true;
-			y.isNeg = origYIsNeg;
-		} else {
-			q = new BigInt();
-			r = biCopy(x);
+		if ((x.isNeg && y.isNeg) || (!x.isNeg && !y.isNeg)){
+			q = biFromNumber(0);
+			r= biCopy(x);
+		}else {
+			q = biFromNumber(-1);
+			r = biAdd(y, x);
 		}
-		return new Array(q, r);
+		return [q, r];
 	}
 
-	q = new BigInt();
-	r = x;
+	q = biFromNumber(0);
+	r = biAbs(x);
+	y = biAbs(y);
 
 	// Normalize Y.
 	var t = Math.ceil(tb / bitsPerDigit) - 1;
