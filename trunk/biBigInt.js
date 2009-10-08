@@ -160,7 +160,6 @@ function biAbs(bi){
 	return result;
 }
 
-
 function biFromNumber(i){
 	var result = new BigInt();
 	result.isNeg = i < 0;
@@ -232,7 +231,7 @@ function digitToHexTrunk(n){
 		return "0";
 	var mask = 0xf;
 	var result = "";
-	for (i = 0; i < biHexPerDigit, n > 0; ++i) {
+	for (i = 0; (i < biHexPerDigit) && (n > 0); i++) {
 		result += hexToChar[n & mask];
 		n >>>= 4;
 	}
@@ -245,7 +244,6 @@ function biToHex(x){
 	result += digitToHexTrunk(x.digits[i--]);
 	for (; i > -1; ) 
 		result += digitToHex(x.digits[i--]);
-	
 	return result;
 }
 
@@ -316,7 +314,8 @@ function biNormalize(x){
 	var k = x.digits.length;
 	for (var i = k - 1; i > 0; i--)
 		if (x.digits[i] == 0)
-			delete x.digits[i];
+			x.digits.pop();
+			//delete x.digits[i];
 		else
 			return x;
 	if (x.digits.length == 1 && x.digits[0] == 0)
@@ -462,10 +461,11 @@ function biSubtract(x, y){
 }
 
 function biHighIndex(x){
-	var result = x.digits.length - 1;
+	/*var result = x.digits.length - 1;
 	while (result > 0 && x.digits[result] == 0)
-		delete x.digits[result--];
-	return result;
+		delete x.digits[result--];*/
+	biNormalize(x);
+	return x.digits.length - 1;
 }
 
 function biNumBits(x){
@@ -484,9 +484,6 @@ function biMultiply(x, y){
 	var result = new BigInt();
 	var n = biHighIndex(x);
 	var t = biHighIndex(y);
-	
-	//for (var i = 0; i < n + t + 2; i++)
-	//	result.digits[i] = 0;
 		
 	for (var k = 0; k < n + t + 1; k++){
 		for (var i = Math.min(Math.max(0, k - t), n), j = k - i; i < Math.min(k, n) + 1 && j > -1; i++, j--){
@@ -499,7 +496,6 @@ function biMultiply(x, y){
 	}
 	// Someone give me a logical xor, please.
 	result.isNeg = !x.isNeg != !y.isNeg;
-	alert(result.digits.length)
 	return biNormalize(result);
 }
 
@@ -512,14 +508,17 @@ function biMultiplyDigit(x, y){
 }
 
 function arrayCopy(src, srcStart, dest, destStart, n){
-	if (srcStart >= src.length) 
+	if (srcStart >= src.length){
+		if (dest.length == 0)
+			dest[0] = 0
 		return;
-	for (var i = dest.length; i < destStart; i++)
-		dest[j] = 0;
+	}
+	for (var i = 0; i < destStart; i++)
+		dest[i] = 0;
 	var m = Math.min(srcStart + n, src.length);
 	for (var i = srcStart, j = destStart; i < m; ++i, ++j)
 		dest[j] = src[i];
-	biNormalize(dest);
+	//biNormalize(dest);
 }
 
 //var highBitMasks = new Array(0x0000, 0x8000, 0xC000, 0xE000, 0xF000, 0xF800,
@@ -530,17 +529,16 @@ function biShiftLeft(x, n){
 	var digitCount = Math.floor(n / bitsPerDigit);
 	var result = new BigInt();
 	arrayCopy(x.digits, 0, result.digits, digitCount,
-	          result.digits.length - digitCount);
+	          x.digits.length);
 	var bits = n % bitsPerDigit;
 	var rightBits = bitsPerDigit - bits;
-	for (var i = result.digits.length - 1, i1 = i - 1; i > 0; --i, --i1) {
-		result.digits[i] = ((result.digits[i] << bits) & maxDigitVal) |
-		                   ((result.digits[i1] & highBitMasks[bits]) >>>
-		                    (rightBits));
+	result.digits[result.digits.length] = result.digits[result.digits.length] >>> rightBits;
+	for (var i = result.digits.length - 1; i > 0; --i) {
+		result.digits[i] = ((result.digits[i] << bits) & maxDigitVal) | (result.digits[i - 1] >>> rightBits);
 	}
-	result.digits[0] = ((result.digits[i] << bits) & maxDigitVal);
+	result.digits[0] = (result.digits[0] << bits) & maxDigitVal;
 	result.isNeg = x.isNeg;
-	return result;
+	return biNormalize(result);
 }
 
 //var lowBitMasks = new Array(0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
@@ -554,13 +552,12 @@ function biShiftRight(x, n){
 	          x.digits.length - digitCount);
 	var bits = n % bitsPerDigit;
 	var leftBits = bitsPerDigit - bits;
-	for (var i = 0, i1 = i + 1; i < result.digits.length - 1; ++i, ++i1) {
-		result.digits[i] = (result.digits[i] >>> bits) |
-		                   ((result.digits[i1] & lowBitMasks[bits]) << leftBits);
+	for (var i = 0; i < result.digits.length - 1; ++i) {
+		result.digits[i] = (result.digits[i] >>> bits) |  ((result.digits[i + 1] << leftBits)  & maxDigitVal);
 	}
 	result.digits[result.digits.length - 1] >>>= bits;
 	result.isNeg = x.isNeg;
-	return result;
+	return biNormalize(result);
 }
 
 function biMultiplyByRadixPower(x, n)
