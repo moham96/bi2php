@@ -164,6 +164,7 @@ function biAbs(bi){
 function biFromNumber(i){
 	var result = new BigInt();
 	result.isNeg = i < 0;
+	result.digits[0] = 0;
 	i = Math.abs(i);
 	var j = 0;
 	while (i > 0) {
@@ -226,11 +227,25 @@ function digitToHex(n){
 	return reverseStr(result);
 }
 
-function biToHex(x){
+function digitToHexTrunk(n){
+	if (n == 0)
+		return "0";
+	var mask = 0xf;
 	var result = "";
-	var n = biHighIndex(x);
-	for (var i = biHighIndex(x); i > -1; --i) 
-		result += digitToHex(x.digits[i]);
+	for (i = 0; i < biHexPerDigit, n > 0; ++i) {
+		result += hexToChar[n & mask];
+		n >>>= 4;
+	}
+	return reverseStr(result);
+}
+
+function biToHex(x){
+	var result = x.isNeg ? "-" : "";
+	var i = biHighIndex(x);
+	result += digitToHexTrunk(x.digits[i--]);
+	for (; i > -1; ) 
+		result += digitToHex(x.digits[i--]);
+	
 	return result;
 }
 
@@ -273,7 +288,7 @@ function biFromHex(s){
 	var sl = s.length;
 	for (var i = sl, j = 0; i > top; i -= biHexPerDigit, ++j)
 		result.digits[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
-	return result;
+	return biNormalize(result);
 }
 
 function biFromString(s, radix){//todo
@@ -294,7 +309,7 @@ function biFromString(s, radix){//todo
 }
 
 function biDump(b){
-	return (b.isNeg ? "minus " : "plus ") + b.digits.join("+");
+	return (b.isNeg ? "minus " : "plus ") + b.digits.join(" ");
 }
 
 function biNormalize(x){
@@ -309,16 +324,22 @@ function biNormalize(x){
 	return x;
 }
 
-function biRecreate(x){
+function biRecreate(x, b){
 	var n = biHighIndex(x) + 1;
 	var c = 0;
-	for (var i = 0; i < n; i++){
+	var i = 0;
+	if (b)
+		i = b;
+	for (; i < n || c > 0; i++){
+		if (!x.digits[i])
+			x.digits[i] = 0;
 		if (c != 0)
-			x.digits[i] += c;
+				x.digits[i] += c;
 		c = x.digits[i] >>> biRadixBits;
 		if (c > 0)
 			x.digits[i] &= maxDigitVal;
 	}
+
 	return biNormalize(x);
 }
 
@@ -357,7 +378,7 @@ function biAddNatural(x, y){
 		else
 			result.digits[k] = c;
 	}
-	return biNormalize(result)
+	return biRecreate(result)
 }
 
 function biSubtractNatural(x, y){
@@ -412,7 +433,7 @@ function biSubtract(x, y){
 		return result;
 	}
 	var x_y = biCompareAbs(x , y);
-	if (x_y = 0)
+	if (x_y == 0)
 		return biFromNumber(0);
 	if (x_y > 0){
 		result = biSubtractNatural(x, y);
@@ -446,21 +467,21 @@ function biNumBits(x){
 
 function biMultiply(x, y){
 	var result = new BigInt();
-	var n = biHighIndex(x) + 1;
-	var t = biHighIndex(y) + 1;
+	var n = biHighIndex(x);
+	var t = biHighIndex(y);
 
-	for (var k = 0; k < n + t + 1; k++){
+	for (var k = 0; k <= n + t; k++){
+		var c = 0;
 		if (!result.digits[k])
 			result.digits[k] = 0;
-		for (var c = 0, i = Math.max(0, k - t), j = k - i; i < k + 1, j > -1; i++, j--)
-			result.digits[k] += x.digits[j] * y.digits[i]
-		c = uv >>> biRadixBits;
-		if (c > 0)
-			result.digits[k + 1] = c;
+		for (var i = Math.min(Math.max(0, k - t), n), j = k - i; i <= Math.min(k, n) && j >= 0; i++, j--){
+			result.digits[k] += x.digits[i] * y.digits[j]
+			biRecreate(result, k)
+		}
 	}
 	// Someone give me a logical xor, please.
-	result.isNeg = x.isNeg != y.isNeg;
-	return result;
+	result.isNeg = !x.isNeg != !y.isNeg;
+	return biNormalize(result);
 }
 
 function biMultiplyDigit(x, y)
