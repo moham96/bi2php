@@ -172,8 +172,7 @@ function biToString(x, radix){ // todo
 	// 2 <= radix <= 36
 	if (radix == 16)
 		return biToHex(x);
-	var b = new BigInt();
-	b.digits[0] = radix;
+	var b = biFromNumber(radix);
 	var qr = biDivideModulo(x, b);
 	var result = hexatrigesimalToChar[qr[1].digits[0]];
 	while (biCompare(qr[0], bigZero) == 1){
