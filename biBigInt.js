@@ -595,6 +595,7 @@ function biDivideModuloNatural(x, y){
 	var r = new BigInt(-1);
 		r.digits = []
 	var faktor = new BigInt();
+	var faktordigits = faktor.digits;
 	for (var i = nx; i > -1; i--){
 		r.digits.unshift(x.digits[i])
 		if (biCompareAbs(y, r) > 0){
@@ -603,13 +604,13 @@ function biDivideModuloNatural(x, y){
 		}
 		j0 = 0;
 		j1 = maxDigitVal;
-		while (j1 - j0 > 4){
+		while (j1 - j0 > 2){
 			jm = Math.floor((j1 + j0) / 2);
-			faktor.digits[0] = jm;
+			faktordigits[0] = jm;
 			qm = biMultiply(y, faktor);
 			flag = biCompareAbs(qm, r);
 			if (flag < 0){
-				j0 = Math.max(jm - 1, 0);
+				j0 = jm;
 				continue;
 			}else if (flag == 0){
 				j0 = jm;
@@ -618,8 +619,13 @@ function biDivideModuloNatural(x, y){
 			}else
 				j1 = Math.min(jm + 1, maxDigitVal);
 		}
-		while (j1 >= j0){
-			faktor.digits[0] = j1;
+		if (j1 == j0){
+			q.digits.unshift(j1);
+			r = biSubtract(r, qm);
+			break;
+		}
+		while (j1-- >= j0){
+			faktordigits[0] = j1;
 			qm = biMultiply(y, faktor);
 			flag = biCompareAbs(qm, r);
 			if (flag < 1){
@@ -627,7 +633,6 @@ function biDivideModuloNatural(x, y){
 				r = biSubtract(r, qm);
 				break;
 			}
-			j1--;
 		}
 	}
 	return [biNormalize(q), biNormalize(r)];
@@ -635,6 +640,8 @@ function biDivideModuloNatural(x, y){
 
 function biDivideModulo(x, y){
 	var q, r;
+	var origXIsNeg = x.isNeg;
+	var origYIsNeg = y.isNeg;
 	if (biCompareAbs(x, y) < 0) {
 		// |x| < |y|
 		if ((x.isNeg && y.isNeg) || (!x.isNeg && !y.isNeg)){
@@ -646,92 +653,9 @@ function biDivideModulo(x, y){
 		}
 		return [q, r];
 	}
-	
-	var nb = biNumBits(x);
-	var nh = biHighIndex(x);
-	var tb = biNumBits(y);
-	var th = biHighIndex(y);
-	var origXIsNeg = x.isNeg;
-	var origYIsNeg = y.isNeg;
-	var origX = x;
-	var origY = y;
-
-	var res = biDivideModuloNatural(biAbs(x), biAbs(y));
-	q = res[0];
-	r = res[1];
-	/*
-
-	q = biFromNumber(0);
-	r = biAbs(x);
-	y = biAbs(y);
-
-	// Normalize Y.
-	var t = Math.ceil(tb / bitsPerDigit) - 1;
-	var lambda = 0;
-	while (y.digits[t] < biHalfRadix) {
-		y = biShiftLeft(y, 1);
-		++lambda;
-		++tb;
-		t = Math.ceil(tb / bitsPerDigit) - 1;
-	}
-	// Shift r over to keep the quotient constant. We'll shift the
-	// remainder back at the end.
-	r = biShiftLeft(r, lambda);
-	nb += lambda; // Update the bit count for x.
-	var n = Math.ceil(nb / bitsPerDigit) - 1;
-
-	var b = biMultiplyByRadixPower(y, n - t);
-
-	while (biCompare(r, b) != -1) {
-		if (!q.digits[n - t])
-			q.digits[n - t] = 1
-		else
-			++q.digits[n - t];
-		r = biSubtract(r, b);
-	}
-	for (var i = n; i > t; --i) {
-    var ri = (i >= r.digits.length) ? 0 : r.digits[i];
-    var ri1 = (i - 1 >= r.digits.length) ? 0 : r.digits[i - 1];
-    var ri2 = (i - 2 >= r.digits.length) ? 0 : r.digits[i - 2];
-    var yt = (t >= y.digits.length) ? 0 : y.digits[t];
-    var yt1 = (t - 1 >= y.digits.length) ? 0 : y.digits[t - 1];
-		if (ri == yt) {
-			q.digits[i - t - 1] = maxDigitVal;
-		} else {
-			q.digits[i - t - 1] = Math.floor((ri * biRadix + ri1) / yt);
-		}
-
-		var c1 = q.digits[i - t - 1] * ((yt * biRadix) + yt1);
-		var c2 = (ri * biRadixSquared) + ((ri1 * biRadix) + ri2);
-		while (c1 > c2) {
-			--q.digits[i - t - 1];
-			c1 = q.digits[i - t - 1] * ((yt * biRadix) | yt1);
-			c2 = (ri * biRadix * biRadix) + ((ri1 * biRadix) + ri2);
-		}
-
-		b = biMultiplyByRadixPower(y, i - t - 1);
-		r = biSubtract(r, biMultiplyDigit(b, q.digits[i - t - 1]));
-		if (r.isNeg) {
-			r = biAdd(r, b);
-			--q.digits[i - t - 1];
-		}
-	biNormalize(q);
-	biNormalize(r);
-	}
-	r = biShiftRight(r, lambda);*/
-	biNormalize(q);
-	biNormalize(r);
-	// Fiddle with the signs and stuff to make sure that 0 <= r < y.
-	//q.isNeg = x.isNeg != origYIsNeg;
-	//if (x.isNeg) {
-	//	if (origYIsNeg) {
-	//		q = biAdd(q, bigOne);
-	//	} else {
-	//		q = biSubtract(q, bigOne);
-	//	}
-	//	y = biShiftRight(y, lambda);
-	//	r = biSubtract(y, r);
-	//}
+	var result = biDivideModuloNatural(biAbs(x), biAbs(y));
+	q = result[0];
+	r = result[1];
 	if (!origXIsNeg && !origYIsNeg){
 		return [q, r];
 	}else if (origXIsNeg && origYIsNeg){
