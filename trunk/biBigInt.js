@@ -379,7 +379,7 @@ function biAddNatural(x, y){
 	var i = 0;
 	var c = 0;
 	var result = new BigInt();
-	var resuldigits = result.digits;
+	var resultdigits = result.digits;
 	var xdigits = x.digits;
 	var ydigits = y.digits;
 	while (i < nx && i < ny){
@@ -586,6 +586,53 @@ function biModuloByRadixPower(x, n){
 	return result;
 }
 
+function biDivideModuloNatural(x, y){
+	var j0, j1, jm, qm, flag;
+	var nx = biHighIndex(x);
+	var ny = biHighIndex(y);
+	var q = new BigInt(-1);
+		q.digits = [];
+	var r = new BigInt(-1);
+		r.digits = []
+	var faktor = new BigInt();
+	for (var i = nx; i > -1; i--){
+		r.digits.unshift(x.digits[i])
+		if (biCompareAbs(y, r) > 0){
+			q.digits.unshift(0);
+			continue;
+		}
+		j0 = 0;
+		j1 = maxDigitVal;
+		while (j1 - j0 > 4){
+			jm = Math.floor((j1 + j0) / 2);
+			faktor.digits[0] = jm;
+			qm = biMultiply(y, faktor);
+			flag = biCompareAbs(qm, r);
+			if (flag < 0){
+				j0 = Math.max(jm - 1, 0);
+				continue;
+			}else if (flag == 0){
+				j0 = jm;
+				j1 = jm;
+				break;
+			}else
+				j1 = Math.min(jm + 1, maxDigitVal);
+		}
+		while (j1 >= j0){
+			faktor.digits[0] = j1;
+			qm = biMultiply(y, faktor);
+			flag = biCompareAbs(qm, r);
+			if (flag < 1){
+				q.digits.unshift(j1);
+				r = biSubtract(r, qm);
+				break;
+			}
+			j1--;
+		}
+	}
+	return [biNormalize(q), biNormalize(r)];
+}
+
 function biDivideModulo(x, y){
 	var q, r;
 	if (biCompareAbs(x, y) < 0) {
@@ -599,7 +646,7 @@ function biDivideModulo(x, y){
 		}
 		return [q, r];
 	}
-
+	
 	var nb = biNumBits(x);
 	var nh = biHighIndex(x);
 	var tb = biNumBits(y);
@@ -609,7 +656,10 @@ function biDivideModulo(x, y){
 	var origX = x;
 	var origY = y;
 
-
+	var res = biDivideModuloNatural(biAbs(x), biAbs(y));
+	q = res[0];
+	r = res[1];
+	/*
 
 	q = biFromNumber(0);
 	r = biAbs(x);
@@ -668,7 +718,7 @@ function biDivideModulo(x, y){
 	biNormalize(q);
 	biNormalize(r);
 	}
-	r = biShiftRight(r, lambda);
+	r = biShiftRight(r, lambda);*/
 	biNormalize(q);
 	biNormalize(r);
 	// Fiddle with the signs and stuff to make sure that 0 <= r < y.
