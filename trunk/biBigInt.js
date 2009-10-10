@@ -378,30 +378,34 @@ function biAddNatural(x, y){
 	var ny = biHighIndex(y) + 1;
 	var i = 0;
 	var c = 0;
+	var result = new BigInt();
+	var resuldigits = result.digits;
+	var xdigits = x.digits;
+	var ydigits = y.digits;
 	while (i < nx && i < ny){
-		var s = x.digits[i] + y.digits[i] + c;
+		var s = xdigits[i] + ydigits[i] + c;
 		if (s < biRadix){
-			result.digits[i] = s;
+			resultdigits[i] = s;
 			c = 0;
 		}else{
-			result.digits[i] = s & maxDigitVal;
+			resultdigits[i] = s & maxDigitVal;
 			c = 1;
 		}
 		i++;
 	}
 	if (nx = ny){
 		if (c > 0)
-			result.digits[i] = c;
+			resultdigits[i] = c;
 	}else if (nx > ny){
 		if (c > 0)
-			result.digits[i] = x.digits[i++] + c;
+			resultdigits[i] = xdigits[i++] + c;
 		while (i < nx)
-			result.digits[i] = x.digits[i++];
+			resultdigits[i] = xdigits[i++];
 	}else if (nx < ny){
 		if (c > 0)
-			result.digits[i] = y.digits[i++] + c;
+			resultdigits[i] = ydigits[i++] + c;
 		while (i < nx)
-			result.digits[i] = y.digits[i++];
+			resultdigits[i] = ydigits[i++];
 	}
 	return biNormalize(result)
 }
