@@ -407,25 +407,29 @@ function biAddNatural(x, y){
 		while (i < nx)
 			resultdigits[i] = ydigits[i++];
 	}
-	return biNormalize(result)
+	//return biNormalize(result)
+	return result;
 }
 
 function biSubtractNatural(x, y){
 // require x >= y
 	var k = biHighIndex(y) + 1;
 	var result = biAbs(x);
+	var resultdigits = result.digits;
+	var xdigits = x.digits;
+	var ydigits = y.digits;	
 	var c = 0;
 	for (var i = 0; i < k ; i++){
-		if (x.digits[i] >= y.digits[i] - c){
-			result.digits[i] = x.digits[i] - y.digits[i] + c;
+		if (xdigits[i] >= ydigits[i] - c){
+			resultdigits[i] = xdigits[i] - ydigits[i] + c;
 			c = 0;
 		}else{
-			result.digits[i] = biRadix + x.digits[i] - y.digits[i] + c;
+			resultdigits[i] = biRadix + xdigits[i] - ydigits[i] + c;
 			c = -1;		
 		}		
 	}
 	if (c < 0)
-		result.digits[k] += c;
+		resultdigits[k] += c;
 	return biNormalize(result);
 }
 
@@ -583,7 +587,7 @@ function biModuloByRadixPower(x, n){
 }
 
 function biDivideModulo(x, y){
-
+	var q, r;
 	if (biCompareAbs(x, y) < 0) {
 		// |x| < |y|
 		if ((x.isNeg && y.isNeg) || (!x.isNeg && !y.isNeg)){
@@ -712,9 +716,11 @@ function biPow(x, y){
 	var result = biCopy(bigOne);
 	var a = x;
 	while (true) {
-		if ((y & 1) != 0) result = biMultiply(result, a);
+		if ((y & 1) != 0) 
+			result = biMultiply(result, a);
 		y >>= 1;
-		if (y == 0) break;
+		if (y == 0)
+			break;
 		a = biMultiply(a, a);
 	}
 	return result;
@@ -725,9 +731,11 @@ function biPowMod(x, y, m){
 	var a = x;
 	var k = y;
 	while (true) {
-		if ((k.digits[0] & 1) != 0) result = biMultiplyMod(result, a, m);
+		if ((k.digits[0] & 1) != 0) 
+			result = biMultiplyMod(result, a, m);
 		k = biShiftRight(k, 1);
-		if (k.digits[0] == 0 && biHighIndex(k) == 0) break;
+		if (k.digits[0] == 0 && biHighIndex(k) == 0) 
+			break;
 		a = biMultiplyMod(a, a, m);
 	}
 	return result;
