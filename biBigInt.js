@@ -324,6 +324,13 @@ function biNumBits(x){
 	return result;
 }
 
+function setMinForBits(x, nb){
+	x.digits.length = Math.ceil(nb / biRadixBits);
+	for (var i = 0; i < x.digits.length; i++)
+		x.digits[i] = 0;
+	x.digits[x.digits.length - 1] = nb % biRadixBits;
+}
+
 function biCompareAbs(x, y){
 	var nx = biHighIndex(x);
 	var ny = biHighIndex(y);
@@ -546,52 +553,46 @@ function biModuloByRadixPower(x, n){
 }
 
 function biDivideModuloNatural(x, y){
-	var j0, j1, jm, qm, d, flag;
-	var nx = biHighIndex(x);
-	var ny = biHighIndex(y);
-	var q = new BigInt(-1);
-		q.digits = [];
-	var r = new BigInt(-1);
-		r.digits = []
-	for (var i = nx; i > -1; i--){
-		r.digits.unshift(x.digits[i])
-		flag = biCompareAbs(r, y);
-		if (flag < 0){
-			q.digits.unshift(0);
-			continue;
+    var j0, j1, jm, qm, flag;
+    var nx = biHighIndex(x);
+    var ny = biHighIndex(y);
+    var q = new BigInt(-1);
+        q.digits = [];
+    var r = new BigInt(-1);
+        r.digits = [0]
+    for (var i = nx; i > -1; i--){
+	//alert(i)
+        r.digits.unshift(x.digits[i])
+		flag = biCompareAbs(y, r);
+        if (flag > 0){
+            q.digits.unshift(0);
+            continue;
+        }else if (flag == 0){
+            q.digits.unshift(1);
+			r.digits = [0];
+            continue;
 		}
-		if (flag == 0){
-			q.digits.unshift(1);
-			r.digits = [];
-			continue;
-		}
-		jm = 1;
-		d = biAbs(y);
-		flag = 0;
-		while (biCompareAbs(r, d) >= 0){
-			jm *= biRadixBits;
-			d = biMultiplyByRadixPower(d, 1);
-			flag++;
-		}
-		if (flag > 0){
-			jm = jm / biRadixBits;
-			d = biDivideByRadixPower(d, 1);
-		}
-		while (biCompareAbs(r, d) >= 0){
-			jm <<= 1;
-			d = biShiftLeft(d, 1);
-			//alert(jm)
-			//alert(biDump(d))
-		}
-		while (biCompareAbs(r, d) < 0){
-			d = biSubtractNatural(d, y);
+		var nr = biHighIndex(r);
+		if (nr == ny)
+            jm = Math.ceil(r.digits[nr] / y.digits[ny]);
+		else
+            jm = Math.ceil((r.digits[nr] * biRadix + r.digits[nr - 1])/ y.digits[ny]);
+        qm = biMultiplyDigit(y, jm);
+		/*alert(biDump(q))
+		alert(biDump(qm))
+		alert(biDump(r))
+		alert(biDump(y))*/
+        while (biCompare(qm, r) > 0){
+			qm = biSubtract(qm, y);
+		//alert(biDump(qm))
 			jm--;
 		}
-		q.digits.unshift(jm);
-		r = biSubtractNatural(r, d);
-	}
-	return [biNormalize(q), biNormalize(r)];
+        q.digits.unshift(jm);
+        r = biSubtract(r, qm);
+    }
+    return [biNormalize(q), biNormalize(r)];
 }
+
 
 function biDivideModulo(x, y){
 	var q, r;
