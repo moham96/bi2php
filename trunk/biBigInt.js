@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) 2009 Андрій Овчаренко (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -354,33 +354,30 @@ function biAddNatural(x, y){
 	var i = 0;
 	var c = 0;
 	var result = new BigInt();
-	var resultdigits = result.digits;
-	var xdigits = x.digits;
-	var ydigits = y.digits;
 	while (i < nx && i < ny){
-		var s = xdigits[i] + ydigits[i] + c;
+		var s = x.digits[i] + y.digits[i] + c;
 		if (s < biRadix){
-			resultdigits[i] = s;
+			result.digits[i] = s;
 			c = 0;
 		}else{
-			resultdigits[i] = s & maxDigitVal;
+			result.digits[i] = s & maxDigitVal;
 			c = 1;
 		}
 		i++;
 	}
-	if (nx = ny){
+	if (nx == ny){
 		if (c > 0)
-			resultdigits[i] = c;
+			result.digits[i] = c;
 	}else if (nx > ny){
 		if (c > 0)
-			resultdigits[i] = xdigits[i++] + c;
+			result.digits[i] = x.digits[i++] + c;
 		while (i < nx)
-			resultdigits[i] = xdigits[i++];
+			result.digits[i] = x.digits[i++];
 	}else if (nx < ny){
 		if (c > 0)
-			resultdigits[i] = ydigits[i++] + c;
+			result.digits[i] = y.digits[i++] + c;
 		while (i < nx)
-			resultdigits[i] = ydigits[i++];
+			result.digits[i] = y.digits[i++];
 	}
 	//return biNormalize(result)
 	return result;
@@ -561,7 +558,6 @@ function biDivideModuloNatural(x, y){
     var r = new BigInt(-1);
         r.digits = [0]
     for (var i = nx; i > -1; i--){
-	//alert(i)
         r.digits.unshift(x.digits[i])
 		flag = biCompareAbs(y, r);
         if (flag > 0){
@@ -574,21 +570,24 @@ function biDivideModuloNatural(x, y){
 		}
 		var nr = biHighIndex(r);
 		if (nr == ny)
-            jm = Math.ceil(r.digits[nr] / y.digits[ny]);
+            jm = Math.floor( (r.digits[nr] * biRadix + (r.digits[nr - 1] || 0)) / 
+								(y.digits[ny] * biRadix + (y.digits[ny - 1] || 0) + 1) );
 		else
-            jm = Math.ceil((r.digits[nr] * biRadix + r.digits[nr - 1])/ y.digits[ny]);
+            jm = Math.floor( (r.digits[nr] * biRadixSquared + (r.digits[nr - 1] || 0) * biRadix + (r.digits[nr - 2] || 0)) /
+								(y.digits[ny] * biRadix + (y.digits[ny - 1] || 0) + 1));
         qm = biMultiplyDigit(y, jm);
-		/*alert(biDump(q))
-		alert(biDump(qm))
-		alert(biDump(r))
-		alert(biDump(y))*/
-        while (biCompare(qm, r) > 0){
-			qm = biSubtract(qm, y);
-		//alert(biDump(qm))
-			jm--;
-		}
+		r = biSubtract(r, qm);
+		if (r.isNeg)
+			while (r.isNeg){
+				r = biAdd(r, y);
+				jm++
+			}
+		else
+			while (biCompare(r, y) >= 0){
+				r = biSubtract(r, y);
+				jm--;
+			}
         q.digits.unshift(jm);
-        r = biSubtract(r, qm);
     }
     return [biNormalize(q), biNormalize(r)];
 }
