@@ -105,6 +105,14 @@ function BigInt(i){
 		this.digits = [0];
 }
 
+BigInt.prototype.isZero = function(){
+	return this.digits[0] == 0 && biNormalize(this).digits.length == 1;
+}
+BigInt.prototype.isOne = function(){
+	return this.digits[0] == 1 && !this.isNeg && biNormalize(this).digits.length == 1;
+}
+
+
 function biFromDecimal(s){
 	return biFromString(s, 10);
 }
@@ -269,7 +277,7 @@ function biFromHex(s){
 }
 
 function biFromString(s, radix){
-	if (radix = 16)
+	if (radix == 16)
 		return biFromHex(s);
 	var isNeg = s.charAt(0) == '-';
 	var istop = isNeg ? 1 : 0;
