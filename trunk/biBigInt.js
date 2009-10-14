@@ -178,9 +178,12 @@ function biToString(x, radix){
 		return biToHex(x);
 	var b = biFromNumber(radix);
 	var qr = biDivideModulo(biAbs(x), b);
+	//alert(biDump(x) + '/' + biDump(b) + '=\n' + biDump(qr[0]) + '//' + biDump(qr[1]))
 	var result = hexatrigesimalToChar[qr[1].digits[0]];
 	while (biCompare(qr[0], bigZero) == 1){
+		var err = biDump(qr[0]) + '/';
 		qr = biDivideModulo(qr[0], b);
+		//alert(err+ biDump(b) + '=\n' + biDump(qr[0]) + '//' + biDump(qr[1]))
 		result += hexatrigesimalToChar[qr[1].digits[0]];
 	}
 	return (x.isNeg ? "-" : "") + reverseStr(result);
@@ -364,6 +367,7 @@ function biAddNatural(x, y){
 	var result = new BigInt();
 	while (i < nx && i < ny){
 		var s = x.digits[i] + y.digits[i] + c;
+		//alert(s)
 		if (s < biRadix){
 			result.digits[i] = s;
 			c = 0;
@@ -373,11 +377,17 @@ function biAddNatural(x, y){
 		}
 		i++;
 	}
+	//alert("nx"+nx+"ny"+ny)
+	//alert("c"+c)
+	
 	if (nx == ny){
 		if (c > 0)
 			result.digits[i] = c;
 	}
 	if (nx > ny){
+	//alert("nx"+nx+"ny"+ny)
+	//alert("c"+c)
+
 		if (c > 0)
 			result.digits[i] = x.digits[i++] + c;
 		while (i < nx){
@@ -385,12 +395,16 @@ function biAddNatural(x, y){
 		}
 	}
 	if (nx < ny){
-		if (c > 0)
+	//alert("nx"+nx+"ny"+ny)
+	//alert("c"+c)
+
+	if (c > 0)
 			result.digits[i] = y.digits[i++] + c;
 		while (i < ny){
 			result.digits[i] = y.digits[i++];
 		}
 	}
+	//alert(biDump(x)+"+"+biDump(y)+"="+biDump(result))
 	//return biNormalize(result)
 	return result;
 }
@@ -571,11 +585,15 @@ function biDivideModuloNatural(x, y){
         r.digits = [0]
     for (var i = nx; i > -1; i--){
         r.digits.unshift(x.digits[i])
+		//alert(biDump(x))
+		//alert(biDump(y))
+		//alert(biDump(r))
 		flag = biCompareAbs(y, r);
         if (flag > 0){
             q.digits.unshift(0);
             continue;
-        }else if (flag == 0){
+        }
+		if (flag == 0){
             q.digits.unshift(1);
 			r.digits = [0];
             continue;
@@ -587,19 +605,22 @@ function biDivideModuloNatural(x, y){
 		else
             jm = Math.floor( (r.digits[nr] * biRadixSquared + (r.digits[nr - 1] || 0) * biRadix + (r.digits[nr - 2] || 0)) /
 								(y.digits[ny] * biRadix + (y.digits[ny - 1] || 0) + 1));
-        qm = biMultiplyDigit(y, jm);
+        //alert(jm)
+		qm = biMultiplyDigit(y, jm);
 		r = biSubtract(r, qm);
+		//alert(biDump(r))
 		if (r.isNeg)
 			while (r.isNeg){
 				r = biAdd(r, y);
-				jm++
+				jm--
 			}
 		else
 			while (biCompare(r, y) >= 0){
 				r = biSubtract(r, y);
-				jm--;
+				jm++;
 			}
         q.digits.unshift(jm);
+		//alert(biDump(q))
     }
     return [biNormalize(q), biNormalize(r)];
 }
