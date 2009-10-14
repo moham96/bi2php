@@ -376,16 +376,20 @@ function biAddNatural(x, y){
 	if (nx == ny){
 		if (c > 0)
 			result.digits[i] = c;
-	}else if (nx > ny){
+	}
+	if (nx > ny){
 		if (c > 0)
 			result.digits[i] = x.digits[i++] + c;
-		while (i < nx)
+		while (i < nx){
 			result.digits[i] = x.digits[i++];
-	}else if (nx < ny){
+		}
+	}
+	if (nx < ny){
 		if (c > 0)
 			result.digits[i] = y.digits[i++] + c;
-		while (i < nx)
+		while (i < ny){
 			result.digits[i] = y.digits[i++];
+		}
 	}
 	//return biNormalize(result)
 	return result;
