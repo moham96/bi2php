@@ -35,12 +35,12 @@ function biExtendedEuclid(a, b){
     qr = biDivideModulo(a, b);
 	q = qr[0];
 	r = qr[1];
-	alert(biToString(a,10) + "/"+biToString(b,10) +"=="+ biToString(q,10) +"|" +biToString(r,10))
+	//alert(biToString(a,10) + "/"+biToString(b,10) +"=="+ biToString(q,10) +"|" +biToString(r,10))
     x = biSubtract(x2, biMultiply(q, x1));
 	y = biSubtract(y2, biMultiply(q, y1));
     a = b;
 	b = r;
-	alert(biDump(b))
+	//alert(biDump(b))
     x2 = x1;
 	x1 = x;
 	y2 = y1;
