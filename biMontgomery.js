@@ -1,14 +1,11 @@
 
 
 function biModularInverse(e, m){
-	//e = e % m;
+	e = biModulo(e, m);
 	var result = biExtendedEuclid(m, e);
-	while (result[1].isNeg)
-		result[1] = biAdd(result[1],m);
-	if (result[2].isOne())
-		return result[1];
-	else
+	if (!result[2].isOne())
 		return null;
+	return biModulo(result[1], m);
 }
 
 /*А ВХОДЕ: два неотрицательных числа a и b: a>=b
@@ -23,7 +20,17 @@ function biModularInverse(e, m){
 */
 
 function biExtendedEuclid(a, b){
-/* calculates a * *x + b * *y = gcd(a, b) = *d */
+	if (biCompare(a, b) >= 0)
+		return biExtendedEuclidNatural(a, b);
+	var result = biExtendedEuclidNatural(b, a);
+	return [ result[1], result[0], result[3] ];
+}
+
+function biExtendedEuclidNatural(a, b){
+// calculates a * x + b * y = gcd(a, b) 
+// require a >= b
+	var origA = a;
+	var origB = b;
 	var qr, q, r, x1, x2, y1, y2, x, y, d;
 	if (b.isZero())
 		return [biFromNumber(1), biFromNumber(0), a];
@@ -47,9 +54,10 @@ function biExtendedEuclid(a, b){
 	y1 = y;
   }
   d = a, x = x2, y = y2;
-  alert(biToString(x,10))
+  /*alert(biToString(x,10))
   alert(biToString(y,10))
   alert(biToString(d,10))
+  alert(biToString(biAdd(biMultiply(origA,x),biMultiply(origB,y)),10))*/
 
   return [x, y, d];
 }
@@ -81,16 +89,35 @@ function biMontgomery00(a, m){
 	return t;
 }
 
-function biMontgomery(a, b, m){
-	var nm = biHighIndex(m) + 1;
-	var R = biPow(biFromNumber(biRadix), nm);
-	var Ri = (biModularInverse(R, m));
-	var a1 = biModulo(biMultiply(a, R), m);
-	var b1 = biModulo(biMultiply(b, R), m);
-	var a1b1 = biMultiply(a1, b1);
-	var t = biDivide(a1b1, R);
-	var t = biMultiply(t, Ri);
-	return biModulo(t, m);
+function biMontgomery(T, N){
+	var nN = biHighIndex(N) + 1;
+	var R = biPow(biFromNumber(biRadix), nN);
+	var EGCD = biExtendedEuclid(R, N);
+	var Ri = EGCD[0];
+	var Rii = biModularInverse(Ri, N);
+	//alert("Rii"+biDump(Rii))
+	var Ni = biMinus(EGCD[1]);
+	var GCD = EGCD[3];
+	alert("******"+biDump(biSubtract(biMultiply(R,Ri),biMultiply(N,Ni)),10))
+	var m = biModulo(T, R);
+	alert(biToString(T,10)+"%\n"+biToString(R,10)+"=\n"+biToString(m,10))
+	var m0 = biMultiply(m, Ni);
+	alert(biToString(m,10)+"*\n"+biToString(Ni,10)+"=\n"+biToString(m0,10)+"\n\n***")
+	var m = biModulo(m0, R);
+	alert(biToString(m0,10)+"%\n"+biToString(R,10)+"=\n"+biToString(m,10)+"\n\n***")
+	var m0 = biMultiply(m, N);
+	alert(biToString(m,10)+"*\n"+biToString(N,10)+"=\n"+biToString(m0,10)+"\n\n***")
+	m = biAdd(T, m0)
+	alert(biToString(T,10)+"+\n"+biToString(m0,10)+"=\n"+biToString(m,10)+"\n\n***")
+	var t = biDivide(m, R)
+	alert(biToString(m,10)+"/\n"+biToString(R,10)+"=\n"+biToString(t,10)+"\n\n***")
+	if (biCompare(t, N) >= 0)
+		t = biSubtract(t, N);
+	alert("t="+biDump(t))
+	//t=biModulo(biMultiply(T, Ri),N)
+	alert("******"+biDump(biSubtract(biMultiply(R,Ri),biMultiply(N,Ni)),10))
+	alert(biDump( biModulo(biMultiply(T, Ri),N)))
+	return biModulo(biMultiply(biAdd(t, biFromNumber(0)), Rii), N);
 }
 
 
