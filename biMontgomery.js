@@ -90,26 +90,52 @@ function biMontgomery00(a, m){
 }
 
 function biMontgomery(T, N){
+alert("N"+biDump(N))
+alert("T"+biDump(T))
+
 	var nN = biHighIndex(N) + 1;
 	var R = biPow(biFromNumber(biRadix), nN);
+	alert("R"+biDump(R))
+
 	var EGCD = biExtendedEuclid(R, N);
 	var Ri = EGCD[0];
+	alert("Ri"+biDump(Ri))
+
 	var Rii = biModularInverse(Ri, N);
+	alert("Rii"+biDump(Rii))
+
 	//alert("Rii"+biDump(Rii))
 	var Ni = biMinus(EGCD[1]);
+	alert("Ni"+biDump(Ni))
+
 	var GCD = EGCD[3];
 	alert("******"+biDump(biSubtract(biMultiply(R,Ri),biMultiply(N,Ni)),10))
 	var m = biModulo(T, R);
+	alert("m1"+biDump(m))
+
 	alert(biToString(T,10)+"%\n"+biToString(R,10)+"=\n"+biToString(m,10))
 	var m0 = biMultiply(m, Ni);
+	alert("m2"+biDump(m0))
+
 	alert(biToString(m,10)+"*\n"+biToString(Ni,10)+"=\n"+biToString(m0,10)+"\n\n***")
 	var m = biModulo(m0, R);
+	alert("m3"+biDump(m))
+
 	alert(biToString(m0,10)+"%\n"+biToString(R,10)+"=\n"+biToString(m,10)+"\n\n***")
 	var m0 = biMultiply(m, N);
+	alert("m4"+biDump(m0))
+
 	alert(biToString(m,10)+"*\n"+biToString(N,10)+"=\n"+biToString(m0,10)+"\n\n***")
 	m = biAdd(T, m0)
+	alert("T"+biDump(T))
+	alert("m0"+biDump(m0))
+
+	alert("m5"+biDump(m))
+
 	alert(biToString(T,10)+"+\n"+biToString(m0,10)+"=\n"+biToString(m,10)+"\n\n***")
+	debug = 0
 	var t = biDivide(m, R)
+	debug = 0
 	alert(biToString(m,10)+"/\n"+biToString(R,10)+"=\n"+biToString(t,10)+"\n\n***")
 	if (biCompare(t, N) >= 0)
 		t = biSubtract(t, N);
