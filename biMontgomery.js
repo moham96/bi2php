@@ -54,3 +54,55 @@ function biExtendedEuclid(a, b){
   return [x, y, d];
 }
 
+function biMontgomery00(a, m){
+	alert(biDump(m))
+	var nm = biHighIndex(m) + 1;
+	alert(nm)
+	alert(biDump(biFromNumber(biRadix)))
+	alert(biDump(biFromNumber(nm)))
+	var R = biPow(biFromNumber(biRadix), nm);
+	alert("R="+biDump(R))
+	var Ri = (biModularInverse(R, m));
+	alert("Be="+biDump(Be))
+	var s1 = biModulo(a, R);
+	alert("s1="+biDump(s1))
+
+	var s2 = biModulo(biMultiply(Be, s1), R);
+	alert("s2="+biDump(s2))
+	var s3 = biMultiply(m, s2);
+	alert("s3="+biDump(s3))
+	var t = biDivide(biAdd(a, s3), R);
+	var i = 50;
+	while (biCompare(t, m) >= 0){
+		t = biSubtract(t, m);
+		if (!i--)
+			break;
+	}
+	return t;
+}
+
+function biMontgomery(a, b, m){
+	var nm = biHighIndex(m) + 1;
+	var R = biPow(biFromNumber(biRadix), nm);
+	var Ri = (biModularInverse(R, m));
+	var a1 = biModulo(biMultiply(a, R), m);
+	var b1 = biModulo(biMultiply(b, R), m);
+	var a1b1 = biMultiply(a1, b1);
+	var t = biDivide(a1b1, R);
+	var t = biMultiply(t, Ri);
+	return biModulo(t, m);
+}
+
+
+function biMontgomery111(e, m){
+	var nm = biHighIndex(m) + 1;
+	var R = biPow(biFromNumber(biRadix), nm);
+	var ei = (biModularInverse(e, m));
+	var r = biModulo(m, ei);
+	var b1 = biModulo(biMultiply(b, Ri), m);
+	var a1b1 = biMultiply(a1, b1);
+	var t = biMultiply(a1b1, R);
+	var t = biMultiply(t, R);
+	return biModulo(t, m);
+}
+
