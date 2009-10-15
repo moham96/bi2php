@@ -131,6 +131,13 @@ function biAbs(bi){
 	return result;
 }
 
+function biMinus(bi){
+	var result = new BigInt(-1);
+	result.digits = bi.digits.slice(0);
+	result.isNeg = !bi.isNeg;
+	return result;
+}
+
 function biFromNumber(i){
 	if (Math.abs(i) > maxInteger)
 		return (biFromFloat(i));
@@ -653,7 +660,7 @@ function biDivideModulo(x, y){
 		q.isNeg = true;
 		q = biSubtract(q, bigOne);
 		r.isNeg = origXIsNeg;
-		r = biAdd(r, origY);
+		r = biAdd(r, y);
 	}
 	// Check for the unbelievably stupid degenerate case of r == -0.
 	if (r.digits[0] == 0 && biHighIndex(r) == 0) 
