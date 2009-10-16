@@ -112,10 +112,10 @@ return r.
 function BarrettMu(m)
 {
 	this.modulus = biCopy(m);
-	this.k = biHighIndex(this.modulus) + 1;
+	/*this.k = biHighIndex(this.modulus) + 1;
 	this.b2k = biMultiplyByRadixPower(bigOne, 2 * this.k);// b2k = b^(2k)
 	this.mu = biDivide(this.b2k, this.modulus);
-	this.bkplus1 = biMultiplyByRadixPower(bigOne, this.k + 1); // bkplus1 = b^(k+1)*/
+	this.bkplus1 = biMultiplyByRadixPower(bigOne, this.k + 1); // bkplus1 = b^(k+1)
 	this.bkminus1 = biMultiplyByRadixPower(bigOne, this.k - 1); // bkplus1 = b^(k+1)*/
 	this.modulo = BarrettMu_modulo;
 	this.multiplyMod = BarrettMu_multiplyMod;
@@ -143,7 +143,7 @@ function BarrettMu_modulo(x)
 }
 
 function BarrettMu_multiplyMod(x, y)
-{
+{//return biMultiplyMod(x,y,this.modulus)
 	
 	//x = biModulo(x, this.modulus);
 	//y = biModulo(y, this.modulus);
@@ -156,6 +156,9 @@ function BarrettMu_multiplyMod(x, y)
 
 function BarrettMu_powMod(x, y)
 {
+
+return biMontgomeryPowMod(x,y,this.modulus)
+
 	var result = new BigInt();
 	result.digits[0] = 1;
 	var a = x;
@@ -170,7 +173,7 @@ function BarrettMu_powMod(x, y)
 }
 
 
-function BarrettMu_powMod00(x, y){
+function BarrettMu_powMod11(x, y){
 	var result = new BigInt();
 	result.digits[0] = 1;
 	var a = x;
