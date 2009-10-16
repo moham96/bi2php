@@ -66,10 +66,9 @@ THE SOFTWARE.
 // elements one at a time. I have not done any timing tests to verify this
 // claim.
 
-if (typeof bi2php != "object")
-	bi2php = {};
-
-//void function(){//emulate local context
+//if (typeof bi2php != "object")
+//	var bi2php = {};
+//void function(){//Begin local
 
 // Max number = 10^16 - 2 = 9999999999999998;
 //               2^53     = 9007199254740992;
@@ -86,6 +85,8 @@ var maxInteger = 4294967295;
 var biHexPerDigit = biRadixBits / 4;
 var bigZero = biFromNumber(0);
 var bigOne = biFromNumber(1);
+
+
 
 // The maximum number of digits in base 10 you can convert to an
 // integer without JavaScript throwing up on you.
@@ -686,3 +687,5 @@ function biPowMod(x, y, m){
 	}
 	return result;
 }
+
+//}()//End local
