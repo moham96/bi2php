@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c) 2009 Андрій Овчаренко (Andrey Ovcharenko)
+Copyright (c)2009 Андрій Овчаренко (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -111,10 +111,16 @@ BigInt.prototype.isZero = function(){
 BigInt.prototype.isOne = function(){
 	return this.digits[0] == 1 && !this.isNeg && biNormalize(this).digits.length == 1;
 }
-
-
-function biFromDecimal(s){
-	return biFromString(s, 10);
+BigInt.prototype.blankZero = function(){
+	this.digits.length = 1;
+	this.digits[0] = 0;
+}
+BigInt.prototype.blankOne = function(){
+	this.digits.length = 1;
+	this.digits[0] = 1;
+}
+BigInt.prototype.blankEmpty = function(){
+	this.digits.length = 0;
 }
 
 function biCopy(bi){
@@ -165,6 +171,39 @@ function biFromFloat(i){
 	return result;
 }
 
+function biFromString(s, radix){
+	if (radix == 16)
+		return biFromHex(s);
+	var isNeg = s.charAt(0) == '-';
+	var istop = isNeg ? 1 : 0;
+	var result = new BigInt();
+	var place = biCopy(bigOne);
+	for (var i = s.length - 1; i >= istop; i--){
+		var c = s.charCodeAt(i);
+		var digit = charToHex(c);
+		var biDigit = biMultiplyDigit(place, digit);
+		result = biAdd(result, biDigit);
+		place = biMultiplyDigit(place, radix);
+	}
+	result.isNeg = isNeg;
+	return biNormalize(result);
+}
+
+function biFromDecimal(s){
+	return biFromString(s, 10);
+}
+
+function biFromHex(s){
+	var result = new BigInt();
+	var isNeg = s.charAt(0) == '-';
+	var top = isNeg ? 1 : 0;
+	result.isNeg = isNeg;
+	var sl = s.length;
+	for (var i = sl, j = 0; i > top; i -= biHexPerDigit, j++)
+		result.digits[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
+	return biNormalize(result);
+}
+
 function reverseStr(s){
 	var result = "";
 	for (var i = s.length - 1; i > -1; i--)
@@ -187,7 +226,6 @@ function biToString(x, radix){
 	var qr = biDivideModulo(biAbs(x), b);
 	var result = hexatrigesimalToChar[qr[1].digits[0]];
 	while (biCompare(qr[0], bigZero) == 1){
-		var err = biDump(qr[0]) + '/';
 		qr = biDivideModulo(qr[0], b);
 		result += hexatrigesimalToChar[qr[1].digits[0]];
 	}
@@ -243,7 +281,6 @@ function biToNumber(x){
 	return x.isNeg ? -result : result;
 }
 
-
 function charToHex(c){
 	var ZERO = 48;
 	var NINE = ZERO + 9;
@@ -271,35 +308,6 @@ function hexToDigit(s){
 		result |= charToHex(s.charCodeAt(i))
 	}
 	return result;
-}
-
-function biFromHex(s){
-	var result = new BigInt();
-	var isNeg = s.charAt(0) == '-';
-	var top = isNeg ? 1 : 0;
-	result.isNeg = isNeg;
-	var sl = s.length;
-	for (var i = sl, j = 0; i > top; i -= biHexPerDigit, j++)
-		result.digits[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
-	return biNormalize(result);
-}
-
-function biFromString(s, radix){
-	if (radix == 16)
-		return biFromHex(s);
-	var isNeg = s.charAt(0) == '-';
-	var istop = isNeg ? 1 : 0;
-	var result = new BigInt();
-	var place = biCopy(bigOne);
-	for (var i = s.length - 1; i >= istop; i--){
-		var c = s.charCodeAt(i);
-		var digit = charToHex(c);
-		var biDigit = biMultiplyDigit(place, digit);
-		result = biAdd(result, biDigit);
-		place = biMultiplyDigit(place, radix);
-	}
-	result.isNeg = isNeg;
-	return biNormalize(result);
 }
 
 function biDump(b){
@@ -340,12 +348,12 @@ function biNumBits(x){
 	return result;
 }
 
-function setMinForBits(x, nb){
+/*function setMinForBits(x, nb){
 	x.digits.length = Math.ceil(nb / biRadixBits);
 	for (var i = 0; i < x.digits.length; i++)
 		x.digits[i] = 0;
 	x.digits[x.digits.length - 1] = nb % biRadixBits;
-}
+}*/
 
 function biCompareAbs(x, y){
 	var nx = biHighIndex(x);
@@ -462,12 +470,11 @@ function biSubtract(x, y){
 }
 
 function biMultiply(x, y){
-	var c;
+	var c, u, uv, k;
 	var n = biHighIndex(x) + 1;
 	var t = biHighIndex(y) + 1;
 	if (n == 1 && x.digits[0] == 0 || t == 1 && y.digits[0] == 0)
 		return new BigInt();
-	var u, uv, k;
 	var result = new BigInt(n + t);
 	var resultdigits = result.digits;
 	var xdigits = x.digits;
@@ -482,7 +489,6 @@ function biMultiply(x, y){
 		}
 		resultdigits[i + n] = c;
 	}
-	// Someone give me a logical xor, please.
 	result.isNeg = x.isNeg != y.isNeg;
 	return biNormalize(result);
 }
@@ -565,8 +571,8 @@ function biDivideModuloNatural(x, y){
     var ny = biHighIndex(y);
     var q = new BigInt(-1);
         q.digits = [];
-    var r = new BigInt(-1);
-        r.digits = [0]
+    var r = new BigInt();
+        //r.digits = [0]
     for (var i = nx; i > -1; i--){
         r.digits.unshift(x.digits[i])
 		flag = biCompareAbs(y, r);
@@ -576,7 +582,7 @@ function biDivideModuloNatural(x, y){
         }
 		if (flag == 0){
             q.digits.unshift(1);
-			r.digits = [0];
+			r.blankZero();// = [0];
             continue;
 		}
 		var nr = biHighIndex(r);
@@ -658,7 +664,7 @@ function biPow(x, y){
 	while (true) {
 		if ((y & 1) != 0) 
 			result = biMultiply(result, a);
-		y >>= 1;
+		y >>>= 1;
 		if (y == 0)
 			break;
 		a = biMultiply(a, a);
