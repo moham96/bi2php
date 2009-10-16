@@ -21,6 +21,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+/*void function(){//Begin local
+
+var biCopy = bi2php.biCopy
+var biAbs = bi2php.biAbs
+var biMinus = bi2php.biMinus
+var biAdd = bi2php.biAdd
+var biSubtract = bi2php.biSubtract
+var biMultiply = bi2php.biMultiply
+var biDivideModulo = bi2php.biDivideModulo
+var biDivide = bi2php.biDivide
+var biModulo = bi2php.biModulo
+var biCompare = bi2php.biCompare
+var biCompareAbs = bi2php.biCompareAbs*/
+
+
+
 function biModularInverse(e, m){
 	e = biModulo(e, m);
 	var result = biExtendedEuclid(m, e);
@@ -84,10 +100,11 @@ function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
 function biMontgomeryPowMod(T, pow, N){
 	var nN = biHighIndex(N) + 1;
 	var	R = biMultiplyByRadixPower(biFromNumber(1), nN);
-	var	EGCD = biExtendedEuclid(R, N);
+	var	EGCD = N.EGCD || biExtendedEuclid(R, N);
+	N.EGCD = EGCD;
 	var Ri = biModulo(EGCD[0], N);
 	var	Ni = biMinus(EGCD[1]);
-		//Ni = biModulo(Ni, R);
+		Ni = biModulo(Ni, R);
 	var k;
 	if (pow.k)	
 		k = pow.k;
@@ -102,10 +119,8 @@ function biMontgomeryPowMod(T, pow, N){
 	}
 	result = biMultiply(result, N);
 	result = biAdd(T, result);
-	//m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
-	//var t = biDivideByRadixPower(m, nN);
-	//while (biCompare(result, N) >= 0)
-	//result = biSubtract(result, N);
 	result = biModulo(result, N);
 	return result;
 }
+
+//}()//End local
