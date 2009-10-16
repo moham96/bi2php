@@ -185,12 +185,10 @@ function biToString(x, radix){
 		return biToHex(x);
 	var b = biFromNumber(radix);
 	var qr = biDivideModulo(biAbs(x), b);
-	//alert(biDump(x) + '/' + biDump(b) + '=\n' + biDump(qr[0]) + '//' + biDump(qr[1]))
 	var result = hexatrigesimalToChar[qr[1].digits[0]];
 	while (biCompare(qr[0], bigZero) == 1){
 		var err = biDump(qr[0]) + '/';
 		qr = biDivideModulo(qr[0], b);
-		//alert(err+ biDump(b) + '=\n' + biDump(qr[0]) + '//' + biDump(qr[1]))
 		result += hexatrigesimalToChar[qr[1].digits[0]];
 	}
 	return (x.isNeg ? "-" : "") + reverseStr(result);
@@ -310,13 +308,6 @@ function biDump(b){
 
 function biNormalize(x){
 	var k = x.digits.length;
-	for (var i = 0; i<k; i++)
-		if (x.digits[i]>maxDigitVal){
-			alert(biNormalize.caller.caller.caller.caller.caller)
-			alert(biDump(x))
-			throw new Error();
-		}
-		
 	if (x.digits[k - 1] != 0 && !isNaN(x.digits[k - 1]))
 		return x;		
 	for (var i = k - 1; i > 0; i--)
@@ -381,7 +372,6 @@ function biAddNatural(x, y){
 	var result = new BigInt();
 	while (i < nx || i < ny){
 		var s = (x.digits[i] || 0) + (y.digits[i] || 0) + c;
-		//alert(s)
 		if (s < biRadix){
 			result.digits[i] = s;
 			c = 0;
@@ -421,27 +411,11 @@ function biSubtractNatural(x, y){
 			break;
 		}
 		i++;
-	}
-		
-	var dbg = biAddNatural(biAbs(result), biAbs(y));
-	if (biCompare(dbg, biAbs(x))!= 0){
-		alert("Error subtraction " + current)
-		alert(arguments.callee.caller.caller.arguments[0].digits.join("*"))
-		alert(arguments.callee.caller.caller.arguments[0].digits.join("*"))
-		alert(arguments.callee.caller.caller.caller.caller.arguments[0].digits.join("*"))
-		alert(biCompareAbs(x,y))
-		alert(biDump(x))
-		alert(biDump(y))
-		alert(biDump(result))
-		alert(biDump(dbg))
-		throw new Error()
-	}
-	
+	}	
 	return biNormalize(result);
 }
 
 function biAdd(x, y){
-current="biAdd"
 	var result;
 	if (!x.isNeg && !y.isNeg)
 		return biAddNatural(x, y);
@@ -465,27 +439,21 @@ current="biAdd"
 }
 
 function biSubtract(x, y){
-current="biSubtract"
 	var result;
 	if (!x.isNeg && y.isNeg)
 		return biAddNatural(x, y);
-current="biSubtract1"
 	if (x.isNeg && !y.isNeg){
 		result = biAddNatural(x, y);
 		result.isNeg = true;
 		return result;
 	}
-current="biSubtract2"
 	var x_y = biCompareAbs(x , y);
-current="biSubtract2 "+x_y+biDump(x)+biDump(y)	
 	if (x_y == 0)
 		return biCopy(bigZero);
-current="biSubtract3 "+x_y+biDump(x)+biDump(y)
 		if (x_y > 0){
 		result = biSubtractNatural(x, y);
 		result.isNeg = x.isNeg;
 	}
-current="biSubtract4 "+x_y+biDump(x)+biDump(y)
 	if (x_y < 0){
 		result = biSubtractNatural(y, x);
 		result.isNeg = !x.isNeg;
@@ -601,9 +569,6 @@ function biDivideModuloNatural(x, y){
         r.digits = [0]
     for (var i = nx; i > -1; i--){
         r.digits.unshift(x.digits[i])
-		//alert(biDump(x))
-		//alert(biDump(y))
-		//alert(biDump(r))
 		flag = biCompareAbs(y, r);
         if (flag > 0){
             q.digits.unshift(0);
@@ -622,25 +587,19 @@ function biDivideModuloNatural(x, y){
             jm = Math.floor( (r.digits[nr] * biRadixSquared + (r.digits[nr - 1] || 0) * biRadix + (r.digits[nr - 2] || 0)) /
 								(y.digits[ny] * biRadix + (y.digits[ny - 1] || 0) + 1));
 		jm = Math.max(0, Math.min(jm, maxDigitVal))						
-		if (debug) alert(jm)
 		qm = biMultiplyDigit(y, jm);
-	if (debug)alert(biToHex(y,10)+"*\n"+biToHex(biFromNumber(jm))+"=\n"+biToHex(qm,10)+"\n\n***")
-	if (debug)alert(biToHex(r,10)+"-\n"+biToHex(qm)+"\n\n***")
 		r = biSubtract(r, qm);
-	if (debug)alert("=="+biToHex(r,10)+"\n\n***")
-		//alert(biDump(r))
 		if (r.isNeg)
 			while (r.isNeg){
 				r = biAdd(r, y);
 				jm--
-			}
-		
+			}	
+		else
 			while (biCompare(r, y) >= 0){
 				r = biSubtract(r, y);
 				jm++;
 			}
         q.digits.unshift(jm);
-		//alert(biDump(q))
     }
     return [biNormalize(q), biNormalize(r)];
 }
