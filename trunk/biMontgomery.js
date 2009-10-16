@@ -5,7 +5,7 @@ function biModularInverse(e, m){
 	var result = biExtendedEuclid(m, e);
 	if (!result[2].isOne())
 		return null;
-	return biModulo(result[1], m);
+	return result[1];
 }
 
 /*А ВХОДЕ: два неотрицательных числа a и b: a>=b
@@ -57,13 +57,13 @@ function biExtendedEuclidNatural(a, b){
 
 f12345=0
 
-function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Rii, Ni){
+function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
 	var nN = nN || biHighIndex(N) + 1;
 	//var R = biPow(biFromNumber(biRadix), nN);
 	var R = R || biMultiplyByRadixPower(biFromNumber(1), nN);
 	var EGCD = EGCD || biExtendedEuclid(R, N);
 	var Ri = Ri || EGCD[0];
-	var Rii = Rii || biModularInverse(Ri, N);
+	//var Rii = Rii || biModularInverse(Ri, N);
 	var Ni = Ni || biMinus(EGCD[1]);
 	//var GCD = EGCD[3];
 	var m = biModulo(T, R);
@@ -73,27 +73,27 @@ function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Rii, Ni){
 	m = biModuloByRadixPower(m, nN);
 	m = biMultiply(m, N);
 	m = biAdd(T, m);
-	var t = biDivideByRadixPower(m, nN);
+	/*var t = biDivideByRadixPower(m, nN);
 	while (biCompare(t, N) >= 0)
-		t = biSubtract(t, N);
-	return biModulo(biMultiply(t, Rii), N);
+		t = biSubtract(t, N);*/
+	return biModulo(m, N);
 }
 
 function biMontgomeryPowMod(T, pow, N){
 	var nN = biHighIndex(N) + 1;
-	var	R = biPow(biFromNumber(biRadix), nN);
+	var	R = biMultiplyByRadixPower(biFromNumber(1), nN);
 	var	EGCD = biExtendedEuclid(R, N);
-	var Ri = EGCD[0];
-	var Rii = biModularInverse(Ri, N);
+	var Ri = biModulo(EGCD[0], N);
+	//var Rii = R;//biModularInverse(Ri, N);
 	var	Ni = biMinus(EGCD[1]);
-		Ni = biAdd(Ni, R);
+		Ni = biModulo(Ni, R);
 	var k = biToString(pow, 2);
 	var result = biFromNumber(1);
 	var m = T;
 	for (var i = k.length - 1; i > -1; i--){
 		if (k.charAt(i) == "1")
-			result = biMontgomeryModulo(biMultiply(result, m), N, nN, R, EGCD, Ri, Rii, Ni);
-		m = biModulo(biMultiply(m, m), N, nN, R, EGCD, Ri, Rii, Ni);
+			result = biMontgomeryModulo(biMultiply(result, m), N, nN, R, EGCD, Ri, Ni);
+		m = biMontgomeryModulo(biMultiply(m, m), N, nN, R, EGCD, Ri, Ni);
 	}
 	return result;
 
