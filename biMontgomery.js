@@ -73,10 +73,12 @@ function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
 	m = biModuloByRadixPower(m, nN);
 	m = biMultiply(m, N);
 	m = biAdd(T, m);
+	// m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
 	/*var t = biDivideByRadixPower(m, nN);
 	while (biCompare(t, N) >= 0)
 		t = biSubtract(t, N);*/
-	return biModulo(m, N);
+	m = biModulo(m, N)
+	return m;
 }
 
 function biMontgomeryPowMod(T, pow, N){
@@ -87,16 +89,27 @@ function biMontgomeryPowMod(T, pow, N){
 	//var Rii = R;//biModularInverse(Ri, N);
 	var	Ni = biMinus(EGCD[1]);
 		Ni = biModulo(Ni, R);
-	var k = biToString(pow, 2);
+	var k;
+	if (pow.k)	
+		k = pow.k;
+	else
+		pow.k = k = biToString(pow, 2);
 	var result = biFromNumber(1);
-	var m = T;
+	var m = biModuloByRadixPower(biMultiply(T, Ni), nN);
+	//var m0 = m;
 	for (var i = k.length - 1; i > -1; i--){
 		if (k.charAt(i) == "1")
-			result = biMontgomeryModulo(biMultiply(result, m), N, nN, R, EGCD, Ri, Ni);
-		m = biMontgomeryModulo(biMultiply(m, m), N, nN, R, EGCD, Ri, Ni);
+			result = biModuloByRadixPower(biMultiply(result, m), nN);
+		m = biModuloByRadixPower(biMultiply(m, m), nN);
 	}
+	result = biMultiply(result, N);
+	result = biAdd(T, result);
+	// m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
+	/*var t = biDivideByRadixPower(m, nN);
+	while (biCompare(t, N) >= 0)
+		t = biSubtract(t, N);*/
+	result = biModulo(result, N)
 	return result;
-
 }
 
 
