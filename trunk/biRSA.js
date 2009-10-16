@@ -49,6 +49,7 @@ function encryptedString(key, s){
 // Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
 // string after it has been converted to an array. This fixes an
 // incompatibility with Flash MX's ActionScript.
+	s = Utf8Encode(s);
 	var a = new Array();
 	var sl = s.length;
 	var i = 0;
@@ -97,5 +98,88 @@ function decryptedString(key, s){
 	if (result.charCodeAt(result.length - 1) == 0) {
 		result = result.substring(0, result.length - 1);
 	}
-	return result;
+	return Utf8Decode(result);
+}
+
+function Utf8Encode(string){
+// Base on:
+/* 
+ * jCryption JavaScript data encryption v1.0.1
+ * http://www.jcryption.org/
+ *
+ * Copyright (c) 2009 Daniel Griesser
+ * Dual licensed under the MIT and GPL licenses.
+ * http://www.opensource.org/licenses/mit-license.php
+ * http://www.opensource.org/licenses/gpl-2.0.php
+ *
+ * If you need any further information about this plugin please
+ * visit my homepage or contact me under daniel.griesser@jcryption.org
+ */
+	//string = string.replace(/\r\n/g,"\n");
+	var utftext = "";
+	var sl = string.length;
+	for (var n = 0; n < sl; n++){
+		var c = string.charCodeAt(n);
+ 		if (c < 128){
+			utftext += String.fromCharCode(c);
+		}else if((c > 127) && (c < 2048)){
+				utftext += String.fromCharCode((c >> 6) | 192);
+				utftext += String.fromCharCode((c & 63) | 128);
+		}else{
+			utftext += String.fromCharCode((c >> 12) | 224);
+			utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+			utftext += String.fromCharCode((c & 63) | 128);
+		}
+ 	}
+ 	return utftext;
+}
+
+/*function utf8_decode ( str_data ) {    // Converts a string with ISO-8859-1 characters encoded with UTF-8   to single-byte
+    // ISO-8859-1
+    // 
+    // +   original by: Webtoolkit.info (http://www.webtoolkit.info/)
+    var string = "", i = 0, c = c1 = c2 = 0;
+    while ( i < str_data.length ) {
+        c = str_data.charCodeAt(i);
+        if (c < 128) {
+            string += String.fromCharCode(c);
+            i++;
+        } else if((c > 191) && (c < 224)) {
+            c2 = str_data.charCodeAt(i+1);
+            string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+            i += 2;
+        } else {
+            c2 = str_data.charCodeAt(i+1);
+            c3 = str_data.charCodeAt(i+2);
+            string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+            i += 3;
+        }
+    }
+    return string;
+}*/
+
+function Utf8Decode(s){
+	var utftext = "";
+	var sl = s.length;
+	var charCode;
+	for (var n = 0; n < sl; n++){
+		var c = s.charCodeAt(n);
+ 		if (c < 128){
+			utftext += String.fromCharCode(c);
+			charCode = 0;
+		}else if((c > 191) && (c < 224)){
+			charCode = ((c & 0x1f) << 6);
+			c = s.charCodeAt(++n);
+			charCode += (c & 0x3f);
+			utftext += String.fromCharCode(charCode);		
+		}else{
+			charCode = ((c & 0xf) << 12);
+			c = s.charCodeAt(++n);
+			charCode += ((c & 0x3f) << 6);
+			c = s.charCodeAt(++n);
+			charCode += (c & 0x3f);
+			utftext += String.fromCharCode(charCode);		
+		}
+ 	}
+ 	return utftext;
 }
