@@ -1,5 +1,26 @@
+/*
+The MIT License
 
+Copyright (c)2009 Андрій Овчаренко (Andrey Ovcharenko)
 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
 function biModularInverse(e, m){
 	e = biModulo(e, m);
 	var result = biExtendedEuclid(m, e);
@@ -7,17 +28,6 @@ function biModularInverse(e, m){
 		return null;
 	return result[1];
 }
-
-/*А ВХОДЕ: два неотрицательных числа a и b: a>=b
-НА ВЫХОДЕ: d=НОД(a,b) и целые x,y: ax + by = d.
-
-1. Если b=0 положить d:=a, x:=1, y:=0 и возвратить (d,x,y)
-2. Положить x2:=1, x1:=0, y2:=0, y1:=1
-3. Пока b>0
-    3.1 q:=[a/b], r:=a-qb, x:=x2-qx1, y:=y2-qy1
-    3.2 a:=b, b:=r, x2:=x1, x1:=x, y2:=y1, y1:=y
-4. Положить d:=a, x:=x2, y:=y2 и возвратить (d,x,y)
-*/
 
 function biExtendedEuclid(a, b){
 	if (biCompare(a, b) >= 0)
@@ -29,47 +39,37 @@ function biExtendedEuclid(a, b){
 function biExtendedEuclidNatural(a, b){
 // calculates a * x + b * y = gcd(a, b) 
 // require a >= b
-	var origA = a;
-	var origB = b;
-	var qr, q, r, x1, x2, y1, y2, x, y, d;
+	var qr, q, r, x1, x2, y1, y2, x, y;
 	if (b.isZero())
 		return [biFromNumber(1), biFromNumber(0), a];
-	x2 = biFromNumber(1);
 	x1 = biFromNumber(0);
-	y2 = biFromNumber(0);
+	x2 = biFromNumber(1);
 	y1 = biFromNumber(1);
+	y2 = biFromNumber(0);
 	while (!b.isZero()){
-    qr = biDivideModulo(a, b);
-	q = qr[0];
-	r = qr[1];
-    x = biSubtract(x2, biMultiply(q, x1));
-	y = biSubtract(y2, biMultiply(q, y1));
-    a = b;
-	b = r;
-    x2 = x1;
-	x1 = x;
-	y2 = y1;
-	y1 = y;
-  }
-  d = a, x = x2, y = y2;
-  return [x, y, d];
+		qr = biDivideModulo(a, b);
+		q = qr[0];
+		r = qr[1];
+		x = biSubtract(x2, biMultiply(q, x1));
+		y = biSubtract(y2, biMultiply(q, y1));
+		a = b;
+		b = r;
+		x2 = x1;
+		x1 = x;
+		y2 = y1;
+		y1 = y;
+	}
+	return [x2, y2, a];
 }
-
-f12345=0
 
 function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
 	var nN = nN || biHighIndex(N) + 1;
-	//var R = biPow(biFromNumber(biRadix), nN);
 	var R = R || biMultiplyByRadixPower(biFromNumber(1), nN);
 	var EGCD = EGCD || biExtendedEuclid(R, N);
 	var Ri = Ri || EGCD[0];
-	//var Rii = Rii || biModularInverse(Ri, N);
 	var Ni = Ni || biMinus(EGCD[1]);
-	//var GCD = EGCD[3];
 	var m = biModulo(T, R);
 	m = biMultiply(m, Ni);
-	if (f12345++<5)
-	alert(biDump(m))
 	m = biModuloByRadixPower(m, nN);
 	m = biMultiply(m, N);
 	m = biAdd(T, m);
@@ -86,9 +86,8 @@ function biMontgomeryPowMod(T, pow, N){
 	var	R = biMultiplyByRadixPower(biFromNumber(1), nN);
 	var	EGCD = biExtendedEuclid(R, N);
 	var Ri = biModulo(EGCD[0], N);
-	//var Rii = R;//biModularInverse(Ri, N);
 	var	Ni = biMinus(EGCD[1]);
-		Ni = biModulo(Ni, R);
+		//Ni = biModulo(Ni, R);
 	var k;
 	if (pow.k)	
 		k = pow.k;
@@ -96,7 +95,6 @@ function biMontgomeryPowMod(T, pow, N){
 		pow.k = k = biToString(pow, 2);
 	var result = biFromNumber(1);
 	var m = biModuloByRadixPower(biMultiply(T, Ni), nN);
-	//var m0 = m;
 	for (var i = k.length - 1; i > -1; i--){
 		if (k.charAt(i) == "1")
 			result = biModuloByRadixPower(biMultiply(result, m), nN);
@@ -104,13 +102,10 @@ function biMontgomeryPowMod(T, pow, N){
 	}
 	result = biMultiply(result, N);
 	result = biAdd(T, result);
-	// m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
-	/*var t = biDivideByRadixPower(m, nN);
-	while (biCompare(t, N) >= 0)
-		t = biSubtract(t, N);*/
-	result = biModulo(result, N)
+	//m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
+	//var t = biDivideByRadixPower(m, nN);
+	//while (biCompare(result, N) >= 0)
+	//result = biSubtract(result, N);
+	result = biModulo(result, N);
 	return result;
 }
-
-
-function biMontgomeryStep(){}
