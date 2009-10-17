@@ -38,11 +38,20 @@ THE SOFTWARE.
 // dave@ohdave.com 
 
 function RSAKeyPair(encryptionExponent, decryptionExponent, modulus){
-	this.e = biFromHex(encryptionExponent);
-	this.d = biFromHex(decryptionExponent);
-	this.m = biFromHex(modulus);
+	this.e = biFromHex(encryptionExponent, 10) || "0";
+	this.d = biFromHex(decryptionExponent, 10) || "0";
+	this.m = biFromHex(modulus, 10);
 	this.chunkSize = 2 * biHighIndex(this.m);
 	this.radix = 16;
+	// for Montgomery algorytm
+	this.m.nN = biHighIndex(this.m) + 1;
+	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
+	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
+	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
+	this.m.Ni = biMinus(this.m.EGCD[1]);
+	this.m.Ni = biModulo(this.m.Ni, this.m.R);
+	this.e.bin = biToString(this.e, 2);
+	this.d.bin = biToString(this.d, 2);
 }
 
 function encryptedString(key, s){
@@ -70,7 +79,7 @@ function encryptedString(key, s){
 			block.digits[j] += a[k++] << 8;
 		}
 		var crypt = biMontgomeryPowMod(block, key.e, key.m);
-		var text = /*key.radix == 16 ? biToHex(crypt) : */biToString(crypt, 10/*key.radix*/);
+		var text = /*key.radix == 16 ? biToHex(crypt) : */biToHex(crypt, 10/*key.radix*/);
 		result += text + " ";
 	}
 	return result.substring(0, result.length - 1); // Remove last space.
@@ -82,13 +91,7 @@ function decryptedString(key, s){
 	var i, j, block;
 	for (i = 0; i < blocks.length; ++i) {
 		var bi;
-		if (key.radix == 16) {
-			bi = biFromString(blocks[i], 10);
-			//alert(blocks[i])
-		}
-		else {
-			bi = biFromString(blocks[i], key.radix);
-		}
+		bi = biFromHex(blocks[i], 10);
 		block = biMontgomeryPowMod(bi, key.d, key.m);
 		for (j = 0; j <= biHighIndex(block); ++j) {
 			result += String.fromCharCode(block.digits[j] & 255,
