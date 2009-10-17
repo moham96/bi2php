@@ -62,7 +62,7 @@ function biEncryptedString(key, s){
 	s = s.replace(/[\x00]/gm, String.fromCharCode(255)); //not UTF-8 zero replace
 	s = s + String.fromCharCode(254); //not UTF-8 terminal sybol
 	var sl = s.length;
-	s = s + biRandomPadding(-sl % key.chunkSize);
+	s = s + biRandomPadding(key.chunkSize - sl % key.chunkSize);
 	var sl = s.length;
 	var result = "";
 	var i, j, k, block;
@@ -76,13 +76,13 @@ function biEncryptedString(key, s){
 		}
 		var crypt = biMontgomeryPowMod(block, key.e, key.m);
 		var text = biToHex(crypt);
-		result += text + " ";
+		result += text + ",";
 	}
 	return result.substring(0, result.length - 1); // Remove last space.
 }
 
 function biDecryptedString(key, s){
-	var blocks = s.split(" ");
+	var blocks = s.split(",");
 	var result = "";
 	var i, j, block;
 	for (i = 0; i < blocks.length; ++i) {
@@ -161,6 +161,6 @@ function biUTF8Decode(s){
 function biRandomPadding(n){
 	var result = "";
 	for (var i = 0; i < n; i++)
-		result = result + String.charFromCode(Math.floor(Math.random()*126) + 1);
+		result = result + String.fromCharCode(Math.floor(Math.random()*126) + 1);
 	return result;
 }
