@@ -27,8 +27,8 @@ class biRSAKeyPair{
 	var $d;
 	var $m;
 	function biRSAKeyPair($encryptionExponent, $decryptionExponent, $modulus){
-		$this->e = self::biFromHex($encryptionExponent);
-		$this->d = self::biFromHex($decryptionExponent);
+		$this->e = self::biFromHex($encryptionExponent) || '0';
+		$this->d = self::biFromHex($decryptionExponent) || '0';
 		$this->m = self::biFromHex($modulus);
 		// We can do two bytes per digit, so
 		// chunkSize = 2 * (number of digits in modulus - 1).
@@ -43,47 +43,47 @@ class biRSAKeyPair{
 		$this->chunkSize = ($count - 1) * 2;
 	}
 
-	function biEncryptedString($key, $s){
-		$s = utf8_encode($s);
+	function biEncryptedString($s, $utf_encoded = TRUE){
+		if ($utf_encoded)
+			$s = utf8_encode($s);
 		$s = str_replace(chr(0), chr(255), $s);
 		$s .= chr(254);
 		$sl = strlen($s);
-		$s = $s . self::biRandomPadding($key->chunkSize - $sl % $key->chunkSize);
+		$s = $s . self::biRandomPadding($this->chunkSize - $sl % $this->chunkSize);
 		$sl = strlen($s);
 		$result = '';
 		$split = '';
-		for ($i = 0; $i < $sl; $i += $key->chunkSize){
+		for ($i = 0; $i < $sl; $i += $this->chunkSize){
 			$block = "0";
 			$faktor = "1";
 			$j = 0;
-			for ($k = $i; $k < $i + $key->chunkSize; ++$j){
+			for ($k = $i; $k < $i + $this->chunkSize; ++$j){
 				$block = bcadd($block, bcmul(ord(substr($s, $k++, 1)), $faktor));
 				$faktor = bcmul($faktor, 256);
 				$block = bcadd($block, bcmul(ord(substr($s, $k++, 1)), $faktor));
 				$faktor = bcmul($faktor, 256);
 			}
-			$text = bcpowmod($block, $key->e, $key->m);
+			$text = bcpowmod($block, $this->e, $this->m);
 			$result .= ($split . self::biToHex($text));
-			$split = ' ';
+			$split = ',';
 		}
 		return $result; // Remove last space.
 	}
 
-	function biDecryptedString($key, $s){
-		$blocks = split(" ", $s);
+	function biDecryptedString($s, $utf8_decoded = TRUE){
+		$blocks = split(",", $s);
 		$result = "";
 		for ($i = 0; $i < count($blocks); $i++){
-			$block = bcpowmod(self::biFromHex($blocks[$i]), $key->d, $key->m);
+			$block = bcpowmod(self::biFromHex($blocks[$i]), $this->d, $this->m);
 			for ($j = 0; $block !== "0"; $j++){
 				$curchar = bcmod($block, 256);
 				$result .= chr($curchar);
 				$block = bcdiv($block, 256, 0);
 			}
 		}
-		//Remove trailing null, if any.
 		$result = str_replace(chr(255), chr(0), $result);
 		$result = substr($result, 0, strpos($result, chr(254)));
-		return utf8_decode($result);
+		return $utf8_decoded ? utf8_decode($result) : $result;
 	}
 	
 	static $hex = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
@@ -130,9 +130,7 @@ class biRSAKeyPair{
 	static function biRandomPadding($n){
 		$result = "";
 		for ($i = 0; $i < $n; $i++)
-			$result = $result . chr(rand(1, 127));
-			
-		echo "<br>randpadding $n $result<br>";
+			$result = $result . chr(rand(1, 127));		
 		return $result;
 	}
 
