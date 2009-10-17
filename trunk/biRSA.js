@@ -59,8 +59,8 @@ function encryptedString(key, s){
 // string after it has been converted to an array. This fixes an
 // incompatibility with Flash MX's ActionScript.
 	s = Utf8Encode(s);
-	var a = new Array();
 	var sl = s.length;
+	/*var a = new Array();
 	var i = 0;
 	while (i < sl) {
 		a[i] = s.charCodeAt(i);
@@ -68,15 +68,16 @@ function encryptedString(key, s){
 	}
 	while (a.length % key.chunkSize != 0)
 		a[i++] = 0;
-	var al = a.length;
+	var al = a.length;*/
 	var result = "";
-	var j, k, block;
-	for (i = 0; i < al; i += key.chunkSize) {
-		block = new BigInt();
+	var i, j, k, block;
+	block = new BigInt();
+	for (var i = 0; i < sl; i += key.chunkSize) {
+		block.blankZero();
 		j = 0;
-		for (k = i; k < i + key.chunkSize; ++j) {
-			block.digits[j] = a[k++];
-			block.digits[j] += a[k++] << 8;
+		for (k = i; k < i + key.chunkSize && k < sl; ++j) {
+			block.digits[j] = s.charCodeAt(k++);
+			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
 		var crypt = biMontgomeryPowMod(block, key.e, key.m);
 		var text = /*key.radix == 16 ? biToHex(crypt) : */biToHex(crypt, 10/*key.radix*/);
