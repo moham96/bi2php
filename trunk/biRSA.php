@@ -2,7 +2,7 @@
 /*
 The MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c)2009 Андрій Овчаренко (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-// RSA, a suite of routines for performing RSA public-key computations in
-// JavaScript.
-//
-// Requires BigInt.js and Barrett.js.
-//
-// Copyright 1998-2005 David Shapiro.
-//
-// You may use, re-use, abuse, copy, and modify this code to your liking, but
-// please keep this header.
-//
-// Thanks!
-// 
-// Dave Shapiro
-// dave@ohdave.com 
 class biRSAKeyPair{
 	var $e;
 	var $d;
 	var $m;
 	function biRSAKeyPair($encryptionExponent, $decryptionExponent, $modulus){
-		//global $biRadixBits;
 		$this->e = self::biFromHex($encryptionExponent);
 		$this->d = self::biFromHex($decryptionExponent);
 		$this->m = self::biFromHex($modulus);
@@ -56,16 +41,14 @@ class biRSAKeyPair{
 			$count++;
 		}
 		$this->chunkSize = ($count - 1) * 2;
-		//$this->radix = $biRadixBits;//12;
-		//$this->barrett = new biBarrettMu($this->m);
 	}
 
 	function biEncryptedString($key, $s){
-	// Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
-	// string after it has been converted to an array. This fixes an
-	// incompatibility with Flash MX's ActionScript.
-		$a = array();
 		$s = utf8_encode($s);
+		$s = str_replace(chr(0), chr(255), $s);
+		$s .= chr(254);
+		$sl = strlen($s);
+		$s = $s . self::biRandomPadding($key->chunkSize - $sl % $key->chunkSize);
 		$sl = strlen($s);
 		$result = '';
 		$split = '';
@@ -81,17 +64,14 @@ class biRSAKeyPair{
 			}
 			$text = bcpowmod($block, $key->e, $key->m);
 			$result .= ($split . self::biToHex($text));
-			$split = '*';
+			$split = ' ';
 		}
 		return $result; // Remove last space.
 	}
 
 	function biDecryptedString($key, $s){
-		$blocks = split("\*", $s);
+		$blocks = split(" ", $s);
 		$result = "";
-		$i;
-		$j;
-		$block;
 		for ($i = 0; $i < count($blocks); $i++){
 			$block = bcpowmod(self::biFromHex($blocks[$i]), $key->d, $key->m);
 			for ($j = 0; $block !== "0"; $j++){
@@ -101,14 +81,15 @@ class biRSAKeyPair{
 			}
 		}
 		//Remove trailing null, if any.
-		if (ord(substr($result, strlen($result) - 1, 1)) == 0){
-			$result = substr($result, 0, strlen($result) - 1);
-		}
+		$result = str_replace(chr(255), chr(0), $result);
+		$result = substr($result, 0, strpos($result, chr(254)));
 		return utf8_decode($result);
 	}
 	
 	static $hex = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
-	static $decimal = array('0'=>0, '1'=>1, '2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9, 'a'=>10, 'b'=>11, 'c'=>12, 'd'=>13, 'e'=>14, 'f'=>15);
+	
+	static $decimal = array('0'=>0, '1'=>1, '2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9,
+							'a'=>10, 'b'=>11, 'c'=>12, 'd'=>13, 'e'=>14, 'f'=>15);
 	
 	static function biToHex($decimal){
 		if ($decimal === '0')
@@ -145,5 +126,15 @@ class biRSAKeyPair{
 		}
 		return $sign . $result;	
 	}
+	
+	static function biRandomPadding($n){
+		$result = "";
+		for ($i = 0; $i < $n; $i++)
+			$result = $result . chr(rand(1, 127));
+			
+		echo "<br>randpadding $n $result<br>";
+		return $result;
+	}
+
 	
 }
