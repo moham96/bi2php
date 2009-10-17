@@ -37,7 +37,7 @@ THE SOFTWARE.
 // Dave Shapiro
 // dave@ohdave.com 
 
-function RSAKeyPair(encryptionExponent, decryptionExponent, modulus){
+function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.e = biFromHex(encryptionExponent, 10) || "0";
 	this.d = biFromHex(decryptionExponent, 10) || "0";
 	this.m = biFromHex(modulus, 10);
@@ -54,21 +54,16 @@ function RSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.d.bin = biToString(this.d, 2);
 }
 
-function encryptedString(key, s){
+function biEncryptedString(key, s){
 // Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
 // string after it has been converted to an array. This fixes an
 // incompatibility with Flash MX's ActionScript.
-	s = Utf8Encode(s);
+	s = biUTF8Encode(s);
+	s = s.replace(/[\x00]/gm, String.fromCharCode(255)); //not UTF-8 zero replace
+	s = s + String.fromCharCode(254); //not UTF-8 terminal sybol
 	var sl = s.length;
-	/*var a = new Array();
-	var i = 0;
-	while (i < sl) {
-		a[i] = s.charCodeAt(i);
-		i++;
-	}
-	while (a.length % key.chunkSize != 0)
-		a[i++] = 0;
-	var al = a.length;*/
+	s = s + biRandomPadding(-sl % key.chunkSize);
+	var sl = s.length;
 	var result = "";
 	var i, j, k, block;
 	block = new BigInt();
@@ -80,13 +75,13 @@ function encryptedString(key, s){
 			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
 		var crypt = biMontgomeryPowMod(block, key.e, key.m);
-		var text = /*key.radix == 16 ? biToHex(crypt) : */biToHex(crypt, 10/*key.radix*/);
+		var text = biToHex(crypt);
 		result += text + " ";
 	}
 	return result.substring(0, result.length - 1); // Remove last space.
 }
 
-function decryptedString(key, s){
+function biDecryptedString(key, s){
 	var blocks = s.split(" ");
 	var result = "";
 	var i, j, block;
@@ -99,14 +94,12 @@ function decryptedString(key, s){
 			                              block.digits[j] >> 8);
 		}
 	}
-	// Remove trailing null, if any.
-	if (result.charCodeAt(result.length - 1) == 0) {
-		result = result.substring(0, result.length - 1);
-	}
-	return Utf8Decode(result);
+	result = result.replace(/\xff/gm, String.fromCharCode(0));
+	result = result.substr(0, result.lastIndexOf(String.fromCharCode(254)));
+	return biUTF8Decode(result);
 }
 
-function Utf8Encode(string){
+function biUTF8Encode(string){
 // Base on:
 /* 
  * jCryption JavaScript data encryption v1.0.1
@@ -139,7 +132,7 @@ function Utf8Encode(string){
  	return utftext;
 }
 
-function Utf8Decode(s){
+function biUTF8Decode(s){
 	var utftext = "";
 	var sl = s.length;
 	var charCode;
@@ -163,4 +156,11 @@ function Utf8Decode(s){
 		}
  	}
  	return utftext;
+}
+
+function biRandomPadding(n){
+	var result = "";
+	for (var i = 0; i < n; i++)
+		result = result + String.charFromCode(Math.floor(Math.random()*126) + 1);
+	return result;
 }
