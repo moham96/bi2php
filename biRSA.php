@@ -42,9 +42,9 @@ class biRSAKeyPair{
 	var $m;
 	function biRSAKeyPair($encryptionExponent, $decryptionExponent, $modulus){
 		//global $biRadixBits;
-		$this->e = $encryptionExponent;
-		$this->d = $decryptionExponent;
-		$this->m = $modulus;
+		$this->e = self::biFromHex($encryptionExponent);
+		$this->d = self::biFromHex($decryptionExponent);
+		$this->m = self::biFromHex($modulus);
 		// We can do two bytes per digit, so
 		// chunkSize = 2 * (number of digits in modulus - 1).
 		// Since biHighIndex returns the high index, not the number of digits, 1 has
@@ -67,25 +67,16 @@ class biRSAKeyPair{
 		$a = array();
 		$s = utf8_encode($s);
 		$sl = strlen($s);
-		$i = 0;
-		while ($i < $sl) {
-			$a[$i] = ord(substr($s, $i, 1));
-			$i++;
-		}
-		while (count($a) % $key->chunkSize != 0) {
-			$a[$i++] = 0;
-		}
-		$al = count($a);
 		$result = '';
 		$split = '';
-		for ($i = 0; $i < $al; $i += $key->chunkSize){
+		for ($i = 0; $i < $sl; $i += $key->chunkSize){
 			$block = "0";
 			$faktor = "1";
 			$j = 0;
 			for ($k = $i; $k < $i + $key->chunkSize; ++$j){
-				$block = bcadd($block, bcmul($a[$k++], $faktor));
+				$block = bcadd($block, bcmul(ord(substr($s, $k++, 1)), $faktor));
 				$faktor = bcmul($faktor, 256);
-				$block = bcadd($block, bcmul($a[$k++], $faktor));
+				$block = bcadd($block, bcmul(ord(substr($s, $k++, 1)), $faktor));
 				$faktor = bcmul($faktor, 256);
 			}
 			$text = bcpowmod($block, $key->e, $key->m);
