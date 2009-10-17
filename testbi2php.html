@@ -1,0 +1,83 @@
+<html>
+<head>
+<script src='biBigInt.js'></script>
+<script src='biRSA.js'></script>
+<script src=biMontgomery.js></script>
+</head>
+<body>
+<h1>
+RSA encode and decode by JavaScript on browser and PHP on server
+</hi>
+
+
+<textarea id="originalText" cols=200 rows=5>-- Type any text and press button step 1, 2, 3, 4, 5 --</textarea>
+<input type=button value="Step 1. Encrypt text local by JavaScript" onclick="step1()"><br>
+
+<textarea id="localEncryptedText" cols=200 rows=5></textarea>
+<input type=button value="Step 2. Decrypt text on server by PHP" onclick="step2()"><br>
+
+<textarea id="serverDecryptedText" cols=200 rows=5></textarea>
+<input type=button  value="Step 3. Encrypt text on server by PHP"  onclick="step3()"><br>
+
+<textarea id="serverEncryptedText" cols=200 rows=5></textarea>
+<input type=button  value="Step 4. Decrypt text local by JavaScript"   onclick="step4()"><br>
+
+<textarea id="localDecryptedText" cols=200 rows=5></textarea>
+<input type=button  value="Step 5. Validate"  onclick="step5()"><br>
+
+
+<script>
+$keyEncrypt = new biRSAKeyPair(
+ "142ab99af88b540da02041f562804665",
+ "0",
+ "30f1b353d5a09313825ca5ef7c87033f"
+);
+$keyDecrypt = new biRSAKeyPair(
+ "0",
+ "266f58f4654cc23e392c2eb99ec90635",
+ "30f1b353d5a09313825ca5ef7c87033f"
+);
+
+if (window.XMLHttpRequest)
+  xmlHttpRequest = new window.XMLHttpRequest();
+else
+  xmlHttpRequest = new ActiveXObject("Msxml2.XMLHTTP");
+
+function step1(){
+	document.getElementById("localEncryptedText").value = biEncryptedString($keyEncrypt, document.getElementById("originalText").value);
+}
+
+function step2(){
+	var httpParams = "step=2&encrypted=" + (document.getElementById("localEncryptedText").value);
+	xmlHttpRequest.open("POST","testbi2php.php", false);
+	xmlHttpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xmlHttpRequest.send(httpParams);
+	eval(xmlHttpRequest.responseText);
+}
+
+function step3(){
+	var httpParams = "step=3&decrypted=" + encodeURIComponent(document.getElementById("originalText").value);
+	xmlHttpRequest.open("POST","testbi2php.php", false);
+	xmlHttpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xmlHttpRequest.send(httpParams);
+	eval(xmlHttpRequest.responseText);
+}
+
+function step4(){
+	document.getElementById("localDecryptedText").value = biDecryptedString($keyDecrypt, document.getElementById("serverEncryptedText").value);
+}
+
+function step5(){
+	if (document.getElementById("localDecryptedText").value ==
+		document.getElementById("serverDecryptedText").value &&
+		document.getElementById("localDecryptedText").value ==
+		document.getElementById("originalText").value)
+		alert ("Original and decoded is equal");
+	else
+		alert ("Sorry, original and decoded not equal");
+}
+</script>
+
+</body>
+</html>
+
