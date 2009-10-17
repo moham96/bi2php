@@ -70,7 +70,7 @@ function encryptedString(key, s){
 			block.digits[j] += a[k++] << 8;
 		}
 		var crypt = biMontgomeryPowMod(block, key.e, key.m);
-		var text = key.radix == 16 ? biToHex(crypt) : biToString(crypt, key.radix);
+		var text = /*key.radix == 16 ? biToHex(crypt) : */biToString(crypt, 10/*key.radix*/);
 		result += text + " ";
 	}
 	return result.substring(0, result.length - 1); // Remove last space.
@@ -83,7 +83,8 @@ function decryptedString(key, s){
 	for (i = 0; i < blocks.length; ++i) {
 		var bi;
 		if (key.radix == 16) {
-			bi = biFromHex(blocks[i]);
+			bi = biFromString(blocks[i], 10);
+			//alert(blocks[i])
 		}
 		else {
 			bi = biFromString(blocks[i], key.radix);
