@@ -65,6 +65,7 @@ class biRSAKeyPair{
 	// string after it has been converted to an array. This fixes an
 	// incompatibility with Flash MX's ActionScript.
 		$a = array();
+		$s = utf8_encode($s);
 		$sl = strlen($s);
 		$i = 0;
 		while ($i < $sl) {
@@ -74,12 +75,9 @@ class biRSAKeyPair{
 		while (count($a) % $key->chunkSize != 0) {
 			$a[$i++] = 0;
 		}
-
 		$al = count($a);
-		$result = "";
-		$j;
-		$k;
-		$block;
+		$result = '';
+		$split = '';
 		for ($i = 0; $i < $al; $i += $key->chunkSize){
 			$block = "0";
 			$faktor = "1";
@@ -90,26 +88,21 @@ class biRSAKeyPair{
 				$block = bcadd($block, bcmul($a[$k++], $faktor));
 				$faktor = bcmul($faktor, 256);
 			}
-		echo "<br>++++++++++++++++$block+++++++++<br>";
 			$text = bcpowmod($block, $key->e, $key->m);
-			//$text = biToString($crypt, $key->radix);
-			$result .= ($text . " ");
+			$result .= ($split . self::biToHex($text));
+			$split = '*';
 		}
-		return substr($result,0, strlen($result) - 1); // Remove last space.
+		return $result; // Remove last space.
 	}
 
 	function biDecryptedString($key, $s){
-		$blocks = split(" ", $s);
-		print_r($blocks);
-		//exit();
+		$blocks = split("\*", $s);
 		$result = "";
 		$i;
 		$j;
 		$block;
 		for ($i = 0; $i < count($blocks); $i++){
-			$block = bcpowmod($blocks[$i], $key->d, $key->m);
-		echo "<br>------------$block----------<br>";
-
+			$block = bcpowmod(self::biFromHex($blocks[$i]), $key->d, $key->m);
 			for ($j = 0; $block !== "0"; $j++){
 				$curchar = bcmod($block, 256);
 				$result .= chr($curchar);
@@ -120,7 +113,46 @@ class biRSAKeyPair{
 		if (ord(substr($result, strlen($result) - 1, 1)) == 0){
 			$result = substr($result, 0, strlen($result) - 1);
 		}
-		return $result;
+		return utf8_decode($result);
+	}
+	
+	static $hex = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
+	static $decimal = array('0'=>0, '1'=>1, '2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9, 'a'=>10, 'b'=>11, 'c'=>12, 'd'=>13, 'e'=>14, 'f'=>15);
+	
+	static function biToHex($decimal){
+		if ($decimal === '0')
+			return '0';
+		if (substr($decimal, 0, 1) == '-'){
+			$sign = '-';
+			$decimal = substr($decimal, 1);
+		}else{
+			$sign = '';
+		}
+		$result = '';
+		while ($decimal !== '0'){
+			$result = self::$hex[bcmod($decimal, 16)] . $result;
+			$decimal = bcdiv($decimal, 16, 0);
+		}
+		return $sign . $result;	
+	}
+
+	static function biFromHex($hexnumber){
+		if ($hexnumber === '0')
+			return '0';
+		if (substr($hexnumber, 0, 1) == '-'){
+			$sign = '-';
+			$hexnumber = substr($hexnumber, 1);
+		}else{
+			$sign = '';
+		}
+		$result = '0';
+		$faktor = '1';
+		$hl = strlen($hexnumber);
+		while ($hl--){
+			$result = bcadd(bcmul(self::$decimal[substr($hexnumber, $hl, 1)], $faktor), $result);
+			$faktor = bcmul($faktor, 16);
+		}
+		return $sign . $result;	
 	}
 	
 }
