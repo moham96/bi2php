@@ -97,25 +97,13 @@ function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
 	return m;
 }
 
-function biMontgomeryPowMod(T, pow, N){
-	var nN = biHighIndex(N) + 1;
-	var	R = biMultiplyByRadixPower(biFromNumber(1), nN);
-	var	EGCD = N.EGCD || biExtendedEuclid(R, N);
-	N.EGCD = EGCD;
-	var Ri = biModulo(EGCD[0], N);
-	var	Ni = biMinus(EGCD[1]);
-		Ni = biModulo(Ni, R);
-	var k;
-	if (pow.k)	
-		k = pow.k;
-	else
-		pow.k = k = biToString(pow, 2);
+function biMontgomeryPowMod(T, EXP, N){
 	var result = biFromNumber(1);
-	var m = biModuloByRadixPower(biMultiply(T, Ni), nN);
-	for (var i = k.length - 1; i > -1; i--){
-		if (k.charAt(i) == "1")
-			result = biModuloByRadixPower(biMultiply(result, m), nN);
-		m = biModuloByRadixPower(biMultiply(m, m), nN);
+	var m = biModuloByRadixPower(biMultiply(T, N.Ni), N.nN);
+	for (var i = EXP.bin.length - 1; i > -1; i--){
+		if (EXP.bin.charAt(i) == "1")
+			result = biModuloByRadixPower(biMultiply(result, m), N.nN);
+		m = biModuloByRadixPower(biMultiply(m, m), N.nN);
 	}
 	result = biMultiply(result, N);
 	result = biAdd(T, result);
