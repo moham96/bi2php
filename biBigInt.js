@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c)2009 ¿Ì‰≥È Œ‚˜‡ÂÌÍÓ (Andrey Ovcharenko)
+Copyright (c)2009 –ê–Ω–¥—Ä—ñ–π –û–≤—á–∞—Ä–µ–Ω–∫–æ (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+// bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
+
 // BigInt, a suite of routines for performing multiple-precision arithmetic in
 // JavaScript.
 //
@@ -66,13 +68,6 @@ THE SOFTWARE.
 // elements one at a time. I have not done any timing tests to verify this
 // claim.
 
-//if (typeof bi2php != "object")
-//	var bi2php = {};
-//void function(){//Begin local
-
-// Max number = 10^16 - 2 = 9999999999999998;
-//               2^53     = 9007199254740992;
-
 var biRadixBase = 2;
 var biRadixBits = 16;
     biRadixBits = biRadixBits - biRadixBits % 4;
@@ -85,8 +80,6 @@ var maxInteger = 4294967295;
 var biHexPerDigit = biRadixBits / 4;
 var bigZero = biFromNumber(0);
 var bigOne = biFromNumber(1);
-
-
 
 // The maximum number of digits in base 10 you can convert to an
 // integer without JavaScript throwing up on you.
@@ -349,13 +342,6 @@ function biNumBits(x){
 	return result;
 }
 
-/*function setMinForBits(x, nb){
-	x.digits.length = Math.ceil(nb / biRadixBits);
-	for (var i = 0; i < x.digits.length; i++)
-		x.digits[i] = 0;
-	x.digits[x.digits.length - 1] = nb % biRadixBits;
-}*/
-
 function biCompareAbs(x, y){
 	var nx = biHighIndex(x);
 	var ny = biHighIndex(y);
@@ -583,7 +569,7 @@ function biDivideModuloNatural(x, y){
         }
 		if (flag == 0){
             q.digits.unshift(1);
-			r.blankZero();// = [0];
+			r.blankZero();
             continue;
 		}
 		var nr = biHighIndex(r);
@@ -610,7 +596,6 @@ function biDivideModuloNatural(x, y){
     }
     return [biNormalize(q), biNormalize(r)];
 }
-
 
 function biDivideModulo(x, y){
 	var q, r;
@@ -641,7 +626,6 @@ function biDivideModulo(x, y){
 		r.isNeg = origXIsNeg;
 		r = biAdd(r, y);
 	}
-	// Check for the unbelievably stupid degenerate case of r == -0.
 	if (r.digits[0] == 0 && biHighIndex(r) == 0) 
 		r.isNeg = false;
 	return [q, r];
@@ -687,5 +671,3 @@ function biPowMod(x, y, m){
 	}
 	return result;
 }
-
-//}()//End local
