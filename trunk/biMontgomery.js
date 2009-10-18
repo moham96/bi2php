@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c)2009 Àíäð³é Îâ÷àðåíêî (Andrey Ovcharenko)
+Copyright (c)2009 ÐÐ½Ð´Ñ€Ñ–Ð¹ ÐžÐ²Ñ‡Ð°Ñ€ÐµÐ½ÐºÐ¾ (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,21 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-/*void function(){//Begin local
-
-var biCopy = bi2php.biCopy
-var biAbs = bi2php.biAbs
-var biMinus = bi2php.biMinus
-var biAdd = bi2php.biAdd
-var biSubtract = bi2php.biSubtract
-var biMultiply = bi2php.biMultiply
-var biDivideModulo = bi2php.biDivideModulo
-var biDivide = bi2php.biDivide
-var biModulo = bi2php.biModulo
-var biCompare = bi2php.biCompare
-var biCompareAbs = bi2php.biCompareAbs*/
-
-
+// bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
 
 function biModularInverse(e, m){
 	e = biModulo(e, m);
@@ -78,25 +64,6 @@ function biExtendedEuclidNatural(a, b){
 	return [x2, y2, a];
 }
 
-function biMontgomeryModulo(T, N, nN, R, EGCD, Ri, Ni){
-	var nN = nN || biHighIndex(N) + 1;
-	var R = R || biMultiplyByRadixPower(biFromNumber(1), nN);
-	var EGCD = EGCD || biExtendedEuclid(R, N);
-	var Ri = Ri || EGCD[0];
-	var Ni = Ni || biMinus(EGCD[1]);
-	var m = biModulo(T, R);
-	m = biMultiply(m, Ni);
-	m = biModuloByRadixPower(m, nN);
-	m = biMultiply(m, N);
-	m = biAdd(T, m);
-	// m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
-	/*var t = biDivideByRadixPower(m, nN);
-	while (biCompare(t, N) >= 0)
-		t = biSubtract(t, N);*/
-	m = biModulo(m, N)
-	return m;
-}
-
 function biMontgomeryPowMod(T, EXP, N){
 	var result = biFromNumber(1);
 	var m = biModuloByRadixPower(biMultiply(T, N.Ni), N.nN);
@@ -110,5 +77,3 @@ function biMontgomeryPowMod(T, EXP, N){
 	result = biModulo(result, N);
 	return result;
 }
-
-//}()//End local
