@@ -1,15 +1,42 @@
 <html>
 <head>
-<script src='biBigInt.js'></script>
-<script src='biRSA.js'></script>
-<script src=biMontgomery.js></script>
+<style type="text/css">
+pre {background-color:wheat;border:peru 1px solid;padding:8px}
+</style>
+<script src="biBigInt.js" type="text/javascript"></script>
+<script src="biRSA.js" type="text/javascript"></script>
+<script src="biMontgomery.js" type="text/javascript"></script>
 </head>
 <body>
 <h1>
-RSA encode and decode by JavaScript on browser and PHP on server
-</hi>
-
-
+RSA crypt and decrypt by JavaScript on browser and PHP on server
+</h1>
+<p>bi2php library include some JavaScript and PHP program code to work with RSA. It easy to crypt text on browser by JavaScript
+and decrypt it on server by PHP. And vise versa.</p>
+<p>You JavaScript code may be some like:</p>
+<pre>
+&lt;script src="biBigInt.js" type="text/javascript">&lt;/script>
+&lt;script src="biRSA.js" type="text/javascript">&lt;/script>
+&lt;script src="biMontgomery.js" type="text/javascript">&lt;/script>
+&lt;script type="text/javascript">
+var $keyEncrypt = new biRSAKeyPair("142ab99af88b540da02041f562804665", "0", "30f1b353d5a09313825ca5ef7c87033f");
+var $keyDecrypt = new biRSAKeyPair("0", "266f58f4654cc23e392c2eb99ec90635", "30f1b353d5a09313825ca5ef7c87033f");
+var encryptedString = $keyEncrypt.biEncryptedString("original string");
+var decryptedString = $keyDecrypt.biDecryptedString(encryptedString);
+&lt;/script>
+</pre>
+<p>And you PHP code is:</p>
+<pre>
+&lt;?php 
+header('Content-Type: text/javascript');
+require('biRSA.php');
+$keyEncrypt = new biRSAKeyPair('142ab99af88b540da02041f562804665', '0', "30f1b353d5a09313825ca5ef7c87033f');
+$keyDecrypt = new biRSAKeyPair('0', "266f58f4654cc23e392c2eb99ec90635', "30f1b353d5a09313825ca5ef7c87033f');
+$encryptedString = $keyEncrypt->biEncryptedString('original string');
+$decryptedString = $keyDecrypt->biDecryptedString(encryptedString);
+?>
+</pre>
+<p>The main aim of library to simplify interact between JavaScript and PHP.</p>
 <textarea id="originalText" cols=200 rows=5>-- Type any text and press button step 1, 2, 3, 4, 5 --</textarea>
 <input type=button value="Step 1. Encrypt text local by JavaScript" onclick="step1()"><br>
 
@@ -26,7 +53,7 @@ RSA encode and decode by JavaScript on browser and PHP on server
 <input type=button  value="Step 5. Validate"  onclick="step5()"><br>
 
 
-<script>
+<script type="text/javascript">
 $keyEncrypt = new biRSAKeyPair(
  "142ab99af88b540da02041f562804665",
  "0",
@@ -44,7 +71,7 @@ else
   xmlHttpRequest = new ActiveXObject("Msxml2.XMLHTTP");
 
 function step1(){
-	document.getElementById("localEncryptedText").value = biEncryptedString($keyEncrypt, document.getElementById("originalText").value);
+	document.getElementById("localEncryptedText").value = $keyEncrypt.biEncryptedString(document.getElementById("originalText").value);
 }
 
 function step2(){
@@ -64,7 +91,7 @@ function step3(){
 }
 
 function step4(){
-	document.getElementById("localDecryptedText").value = biDecryptedString($keyDecrypt, document.getElementById("serverEncryptedText").value);
+	document.getElementById("localDecryptedText").value = $keyDecrypt.biDecryptedString(document.getElementById("serverEncryptedText").value);
 }
 
 function step5(){
