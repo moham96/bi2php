@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c)2009 ¿Ì‰≥È Œ‚˜‡ÂÌÍÓ (Andrey Ovcharenko)
+Copyright (c)2009 –ê–Ω–¥—Ä—ñ–π –û–≤—á–∞—Ä–µ–Ω–∫–æ (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+// bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
 
 // RSA, a suite of routines for performing RSA public-key computations in
 // JavaScript.
@@ -54,7 +55,10 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.d.bin = biToString(this.d, 2);
 }
 
-function biEncryptedString(key, s){
+biRSAKeyPair.prototype.biEncryptedString = biEncryptedString;
+biRSAKeyPair.prototype.biDecryptedString = biDecryptedString;
+
+function biEncryptedString(s){
 // Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
 // string after it has been converted to an array. This fixes an
 // incompatibility with Flash MX's ActionScript.
@@ -62,33 +66,33 @@ function biEncryptedString(key, s){
 	s = s.replace(/[\x00]/gm, String.fromCharCode(255)); //not UTF-8 zero replace
 	s = s + String.fromCharCode(254); //not UTF-8 terminal sybol
 	var sl = s.length;
-	s = s + biRandomPadding(key.chunkSize - sl % key.chunkSize);
+	s = s + biRandomPadding(this.chunkSize - sl % this.chunkSize);
 	var sl = s.length;
 	var result = "";
 	var i, j, k, block;
 	block = new BigInt();
-	for (var i = 0; i < sl; i += key.chunkSize) {
+	for (var i = 0; i < sl; i += this.chunkSize) {
 		block.blankZero();
 		j = 0;
-		for (k = i; k < i + key.chunkSize && k < sl; ++j) {
+		for (k = i; k < i + this.chunkSize && k < sl; ++j) {
 			block.digits[j] = s.charCodeAt(k++);
 			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
-		var crypt = biMontgomeryPowMod(block, key.e, key.m);
+		var crypt = biMontgomeryPowMod(block, this.e, this.m);
 		var text = biToHex(crypt);
 		result += text + ",";
 	}
 	return result.substring(0, result.length - 1); // Remove last space.
 }
 
-function biDecryptedString(key, s){
+function biDecryptedString(s){
 	var blocks = s.split(",");
 	var result = "";
 	var i, j, block;
 	for (i = 0; i < blocks.length; ++i) {
 		var bi;
 		bi = biFromHex(blocks[i], 10);
-		block = biMontgomeryPowMod(bi, key.d, key.m);
+		block = biMontgomeryPowMod(bi, this.d, this.m);
 		for (j = 0; j <= biHighIndex(block); ++j) {
 			result += String.fromCharCode(block.digits[j] & 255,
 			                              block.digits[j] >> 8);
