@@ -1,8 +1,8 @@
-<?php
+ï»¿<?php
 /*
 The MIT License
 
-Copyright (c)2009 Àíäð³é Îâ÷àðåíêî (Andrey Ovcharenko)
+Copyright (c)2009 ÐÐ½Ð´Ñ€Ñ–Ð¹ ÐžÐ²Ñ‡Ð°Ñ€ÐµÐ½ÐºÐ¾ (Andrey Ovcharenko)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+// bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
+
 class biRSAKeyPair{
 	var $e;
 	var $d;
