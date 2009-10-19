@@ -95,13 +95,27 @@ function step4(){
 }
 
 function step5(){
-	if (document.getElementById("localDecryptedText").value ==
-		document.getElementById("serverDecryptedText").value &&
-		document.getElementById("localDecryptedText").value ==
-		document.getElementById("originalText").value)
-		alert ("Original and decoded is equal");
+	if (document.getElementById("originalText").value == document.getElementById("serverDecryptedText").value)
+		alert ("Original and server decoded is equal");
+	else{
+		alert ("Sorry, original and server decoded not equal");
+	var first = document.getElementById("originalText").value;
+	var second = document.getElementById("serverDecryptedText").value;
+	var sl = Math.max(first.length, second.length )
+		for (var i = 0; i < sl; i++){
+			if (first.substr(i,1) != second.substr(i,1)){
+			    alert("char at position " + i);
+				alert(first.substr(i - 5,10));
+				alert(second.substr(i - 5,10));
+				break;
+			}
+		}
+	}
+
+	if (document.getElementById("localDecryptedText").value == document.getElementById("originalText").value)
+		alert ("Original and local decoded is equal");
 	else
-		alert ("Sorry, original and decoded not equal");
+		alert ("Sorry, original and local decoded not equal");
 }
 </script>
 
