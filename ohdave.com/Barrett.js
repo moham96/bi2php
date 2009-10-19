@@ -53,6 +53,7 @@ function BarrettMu_multiplyMod(x, y)
 	x = this.modulo(x);
 	y = this.modulo(y);
 	*/
+	//return biMultiplyMod(x, y, this.modulus);
 	var xy = biMultiply(x, y);
 	return this.modulo(xy);
 }
