@@ -13,14 +13,14 @@ $keyDecrypt = new biRSAKeyPair(
 );
 
 if ($_POST['step'] == 2){
-	$decrypted = str_replace( array('"', '<', "\n", "\r"), array('\\"', "\<", "\\n", "\\r"), $keyDecrypt->biDecryptedString($_POST['encrypted'], FALSE));
+	$decrypted = str_replace( array("\\", '"', '<', "\n", "\r"), array('\\\\', '\\"', "\<", "\\n", "\\r"), $keyDecrypt->biDecryptedString($_POST['encrypted'], FALSE));
 	echo <<<EOT
 document.getElementById("serverDecryptedText").value = "$decrypted";
 EOT;
 }
 
 if ($_POST['step'] == 3){
-	$encrypted = str_replace( array('"', '<', "\n", "\r"), array('\\"', "\<", "\\n", "\\r"), $keyEncrypt->biEncryptedString($_POST['decrypted'], FALSE));
+	$encrypted = str_replace( array('"', '<', "\n", "\r"), array('\\"', "\<", "\\n", "\\r" ), $keyEncrypt->biEncryptedString($_POST['decrypted'], FALSE));
 	echo <<<EOT
 document.getElementById("serverEncryptedText").value = "$encrypted";
 EOT;
