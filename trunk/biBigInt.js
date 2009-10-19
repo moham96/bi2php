@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 // bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
+// Base on dave@ohdave.com
+
 
 // BigInt, a suite of routines for performing multiple-precision arithmetic in
 // JavaScript.
@@ -364,20 +366,35 @@ function biAddNatural(x, y){
 	var ny = biHighIndex(y) + 1;
 	var i = 0;
 	var c = 0;
-	var result = new BigInt();
-	while (i < nx || i < ny){
-		var s = (x.digits[i] || 0) + (y.digits[i] || 0) + c;
-		if (s < biRadix){
-			result.digits[i] = s;
+	if (nx > ny){
+		var result = biAbs(x);
+		var source = y;
+		var k = ny;
+	}else{
+		var result = biAbs(y);
+		var source = x;
+		var k = nx;
+	}
+	while (i < k){
+		result.digits[i] += source.digits[i] + c;
+		if (result.digits[i] < biRadix){
 			c = 0;
 		}else{
-			result.digits[i] = s & maxDigitVal;
+			result.digits[i] &= maxDigitVal;
 			c = 1;
 		}
 		i++;
 	}
-	if (c > 0)
-		result.digits[i] = c;
+	while (c > 0){
+		result.digits[i] = (result.digits[i] || 0) + c;
+		if (result.digits[i] < biRadix){
+			c = 0;
+		}else{
+			result.digits[i] &= maxDigitVal;
+			c = 1;
+		}
+		i++;
+	}
 	return result;
 }
 
@@ -551,6 +568,31 @@ function biModuloByRadixPower(x, n){
 	arrayCopy(x.digits, 0, result.digits, 0, n);
 	return result;
 }
+
+function biMultiplyModByRadixPower(x, y, p){
+	var c, u, uv, k;
+	var n = biHighIndex(x) + 1;
+	var t = biHighIndex(y) + 1;
+	if (n == 1 && x.digits[0] == 0 || t == 1 && y.digits[0] == 0)
+		return new BigInt();
+	var result = new BigInt(p);
+	var resultdigits = result.digits;
+	var xdigits = x.digits;
+	var ydigits = y.digits;
+	for (var i = 0; i < t && i < p; i++) {
+		c = 0;
+		k = i;
+		for (j = 0; j < n && k < p; j++, k++) {
+			uv = resultdigits[k] + xdigits[j] * ydigits[i] + c;
+			resultdigits[k] = uv & maxDigitVal;
+			c = uv >>> biRadixBits;
+		}
+		//resultdigits[i + n] = c;
+	}
+	result.isNeg = x.isNeg != y.isNeg;
+	return biNormalize(result);
+}
+
 
 function biDivideModuloNatural(x, y){
     var j0, j1, jm, qm, flag;
