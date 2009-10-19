@@ -45,7 +45,7 @@ class biRSAKeyPair{
 		$this->chunkSize = ($count - 1) * 2;
 	}
 
-	function biEncryptedString($s, $utf_encoded = TRUE){
+	function biEncryptedString($s, $utf_encoded = FALSE){
 		if ($utf_encoded)
 			$s = utf8_encode($s);
 		$s = str_replace(chr(0), chr(255), $s);
@@ -72,7 +72,7 @@ class biRSAKeyPair{
 		return $result; // Remove last space.
 	}
 
-	function biDecryptedString($s, $utf8_decoded = TRUE){
+	function biDecryptedString($s, $utf8_decoded = FALSE){
 		$blocks = split(",", $s);
 		$result = "";
 		for ($i = 0; $i < count($blocks); $i++){
