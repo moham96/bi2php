@@ -72,12 +72,14 @@ function biMontgomeryPowMod(T, EXP, N){
 			result = biMultiplyModByRadixPower(result, m, N.nN); //biModuloByRadixPower(biMultiply(result, m), N.nN);
 		m = biMultiplyModByRadixPower(m, m, N.nN); // biModuloByRadixPower(biMultiply(m, m), N.nN);
 	}
-	result = biMultiplyByRadixPower(result, N.nN);
+	//result = biMultiplyByRadixPower(result, N.nN);
 	result = biAdd(T, result);
 	result = biModuloByRadixPower(result, N.nN);
 	if (biCompare(result, N) >= 0)
 		result = biSubtract(result, N);
-	if (result.isNeg || biCompare(result, N) >= 0)
+	if (result.isNeg || biCompare(result, N) >= 0){
 		result = biModulo(result, N);
+		alert(biDUmp(result))
+	}
 	return result;
 }
