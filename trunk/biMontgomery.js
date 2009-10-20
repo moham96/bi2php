@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-// bi2php v0.1.63.beta from http://code.google.com/p/bi2php/
+// bi2php v0.1.75.alfa from http://code.google.com/p/bi2php/
 
 function biModularInverse(e, m){
 	e = biModulo(e, m);
@@ -66,14 +66,18 @@ function biExtendedEuclidNatural(a, b){
 
 function biMontgomeryPowMod(T, EXP, N){
 	var result = biFromNumber(1);
-	var m = biModuloByRadixPower(biMultiply(T, N.Ni), N.nN);
+	var m = biModuloByRadixPower(biMultiply(T, N.Ri), N.nN);
 	for (var i = EXP.bin.length - 1; i > -1; i--){
 		if (EXP.bin.charAt(i) == "1")
 			result = biMultiplyModByRadixPower(result, m, N.nN); //biModuloByRadixPower(biMultiply(result, m), N.nN);
 		m = biMultiplyModByRadixPower(m, m, N.nN); // biModuloByRadixPower(biMultiply(m, m), N.nN);
 	}
-	result = biMultiply(result, N);
+	result = biMultiplyByRadixPower(result, N.nN);
 	result = biAdd(T, result);
-	result = biModulo(result, N);
+	result = biModuloByRadixPower(result, N.nN);
+	if (biCompare(result, N) >= 0)
+		result = biSubtract(result, N);
+	if (result.isNeg || biCompare(result, N) >= 0)
+		result = biModulo(result, N);
 	return result;
 }
