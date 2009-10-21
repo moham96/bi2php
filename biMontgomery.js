@@ -35,7 +35,7 @@ function biExtendedEuclid(a, b){
 	if (biCompare(a, b) >= 0)
 		return biExtendedEuclidNatural(a, b);
 	var result = biExtendedEuclidNatural(b, a);
-	return [ result[1], result[0], result[3] ];
+	return [ result[1], result[0], result[2] ];
 }
 
 function biExtendedEuclidNatural(a, b){
