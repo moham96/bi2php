@@ -713,3 +713,10 @@ function biPowMod(x, y, m){
 	}
 	return result;
 }
+
+function biRandom(n){
+	var result = new BigInt();
+	while (n--)
+		result.digits[n] = Math.floor(Math.random() * maxDigitVal);
+	return result;
+}
