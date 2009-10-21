@@ -79,7 +79,7 @@ function biMontgomeryPowMod(T, EXP, N){
 		result = biSubtract(result, N);
 	if (result.isNeg || biCompare(result, N) >= 0){
 		result = biModulo(result, N);
-		alert(biDUmp(result))
+		//alert(biDump(result))
 	}
 	return result;
 }
