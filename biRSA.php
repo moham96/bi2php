@@ -22,7 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-// bi2php v0.1.75.alfa from http://code.google.com/p/bi2php/
+// bi2php v0.1.79.alfa from http://code.google.com/p/bi2php/
 
 class biRSAKeyPair{
 	var $e;
