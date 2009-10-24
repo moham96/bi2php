@@ -171,10 +171,10 @@ function biFromString(s, radix){
 	if (radix == 16)
 		return biFromHex(s);
 	var isNeg = s.charAt(0) == '-';
-	var istop = isNeg ? 1 : 0;
+	var first = (isNeg ? 1 : 0) - 1;
 	var result = new BigInt();
 	var place = biCopy(bigOne);
-	for (var i = s.length - 1; i >= istop; i--){
+	for (var i = s.length - 1; i > first; i--){
 		var c = s.charCodeAt(i);
 		var digit = charToHex(c);
 		var biDigit = biMultiplyDigit(place, digit);
@@ -191,11 +191,14 @@ function biFromDecimal(s){
 
 function biFromHex(s){
 	var result = new BigInt();
-	var isNeg = s.charAt(0) == '-';
-	var top = isNeg ? 1 : 0;
-	result.isNeg = isNeg;
+	if (s.charAt(0) == '-'){
+		result.isNeg = true;
+		s = substr(s, 1);
+	}else{
+		result.isNeg = false;
+	}
 	var sl = s.length;
-	for (var i = sl, j = 0; i > top; i -= biHexPerDigit, j++)
+	for (var i = sl, j = 0; i > 0; i -= biHexPerDigit, j++)
 		result.digits[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
 	return biNormalize(result);
 }
@@ -238,7 +241,7 @@ var hexToChar = new Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 function digitToHex(n){
 	var mask = 0xf;
 	var result = "";
-	for (i = 0; i < biHexPerDigit; i++){
+	for (var i = 0; i < biHexPerDigit; i++){
 		result += hexToChar[n & mask];
 		n >>>= 4;
 	}
@@ -250,7 +253,7 @@ function digitToHexTrunk(n){
 		return "0";
 	var mask = 0xf;
 	var result = "";
-	for (i = 0; i < biHexPerDigit && n > 0; i++){
+	for (var i = 0; i < biHexPerDigit && n > 0; i++){
 		result += hexToChar[n & mask];
 		n >>>= 4;
 	}
