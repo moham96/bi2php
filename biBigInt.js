@@ -224,7 +224,7 @@ function biToString(x, radix){
 	var b = biFromNumber(radix);
 	var qr = biDivideModulo(biAbs(x), b);
 	var result = hexatrigesimalToChar[qr[1].digits[0]];
-	while (biCompare(qr[0], bigZero) == 1){
+	while (!qr[0].isZero()){
 		qr = biDivideModulo(qr[0], b);
 		result += hexatrigesimalToChar[qr[1].digits[0]];
 	}
