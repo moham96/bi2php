@@ -41,9 +41,9 @@ THE SOFTWARE.
 // dave@ohdave.com 
 
 function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
-	this.e = biFromHex(encryptionExponent, 10) || "0";
-	this.d = biFromHex(decryptionExponent, 10) || "0";
-	this.m = biFromHex(modulus, 10);
+	this.e = biFromHex(encryptionExponent) || "0";
+	this.d = biFromHex(decryptionExponent) || "0";
+	this.m = biFromHex(modulus);
 	this.chunkSize = 2 * biHighIndex(this.m);
 	this.radix = 16;
 	// for Montgomery algorytm
@@ -52,8 +52,8 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
 	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
 	this.m.Ni = biMinus(this.m.EGCD[1]);
-	this.m.Ni = biModulo(this.m.Ni, this.m.R);
-	//this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
+	//this.m.Ni = biModulo(this.m.Ni, this.m.R);
+	this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
 	this.e.bin = biToString(this.e, 2);
 	this.d.bin = biToString(this.d, 2);
 }
