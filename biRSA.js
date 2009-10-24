@@ -53,6 +53,7 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
 	this.m.Ni = biMinus(this.m.EGCD[1]);
 	this.m.Ni = biModulo(this.m.Ni, this.m.R);
+	//this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
 	this.e.bin = biToString(this.e, 2);
 	this.d.bin = biToString(this.d, 2);
 }
