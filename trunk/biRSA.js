@@ -46,7 +46,7 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.m = biFromHex(modulus);
 	this.chunkSize = 2 * biHighIndex(this.m);
 	this.radix = 16;
-	// for Montgomery algorytm
+	// for Montgomery algorythm
 	this.m.nN = biHighIndex(this.m) + 1;
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
 	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
@@ -62,6 +62,11 @@ biRSAKeyPair.prototype.biEncryptedString = biEncryptedString;
 biRSAKeyPair.prototype.biDecryptedString = biDecryptedString;
 
 function biEncryptedString(s){
+// UTF-8 encode added. So some symbol is non-UTF-8 - #254, #255.
+// Terminate symbol #254 to prevent nonvalue zerro (0000xxx)
+// Left padding with random string to prevent from siple decrypt shon message.
+// Split by space is change to split by comma to prevent url encoding space to +
+//
 // Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
 // string after it has been converted to an array. This fixes an
 // incompatibility with Flash MX's ActionScript.
