@@ -107,6 +107,16 @@ BigInt.prototype.isZero = function(){
 BigInt.prototype.isOne = function(){
 	return this.digits[0] == 1 && !this.isNeg && biNormalize(this).digits.length == 1;
 }
+BigInt.prototype.isEqual = function(bis){
+	if (this.isNeg != bis.isNeg)
+		return false;
+	if (this.digits.length != bis.digits.length)
+		return false;
+	for (var i = this.digits.length - 1; i > -1; i--)
+		if (this.digits[i] != bis.digits[i])
+			return false;
+	return true;
+}
 BigInt.prototype.blankZero = function(){
 	this.digits.length = 1;
 	this.digits[0] = 0;
