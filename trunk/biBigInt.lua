@@ -12,12 +12,18 @@ local biHexPerDigit = biRadixBits / 4;
 
 function biBigInt(n)
 	local result={["isNeg"]=false, ["digits"]={[0]=10}};
+	--if type(n) == "number" then
+		local i;
+		for i = 0, n, 1 do
+			result.digits[i] = 0;
+		end
+	--end
 	return result;
 end
 
 
 function biFromHex(s)
-	local result = biBigInt();
+	local result = biBigInt(0);
 	if s:sub(1,1) == '-' then
 		result.isNeg = true;
 		s = sub(s, 2);
@@ -27,7 +33,6 @@ function biFromHex(s)
 	local sl = s:len();
 	local j = 0;
 	for i = sl, 1, -biHexPerDigit do
-	print(i .. j .. "\n")
 		result.digits[j]=hexToDigit(s:sub(math.max(i-biHexPerDigit+1,1),i));
 		j = j + 1;
 	end
@@ -35,7 +40,6 @@ function biFromHex(s)
 end
 
 function hexToDigit(s)
-print("***"..s.."\n")
 	local result = 0;
 	local sl = math.min(s:len(), biHexPerDigit);
 	for i = 1, sl, 1 do
@@ -52,7 +56,6 @@ local hexatrigesimalToChar = {
 };
 
 function charToHex(c)
-print(c .. "\n")
 	local ZERO = 48;
 	local NINE = ZERO + 9;
 	local littleA = 97;
@@ -153,11 +156,43 @@ end
 
 function biDump(bi)
 	local nb = table.maxn(bi.digits);
-	print(nb);
 	for i = 0, nb, 1 do
 		print(bi.digits[i] .. "..");
 	end
 end
 
-qqq = biFromHex("aadd1ff234bb5ccc67aa89d6546d465d6546465464f64f65465b46b4654c654c6546a46a546565d46d89d79987f97f");
-print(biToHex(qqq));
+function biMultiply(x, y)
+	local c, u, uv, k, i, j;
+	local n = biHighIndex(x) + 1;
+	local t = biHighIndex(y) + 1;
+	if (n == 1 and x.digits[0] == 0) or (t == 1 and y.digits[0] == 0) then
+		return biBigInt();
+	end
+	local result = biBigInt(n + t);
+	local resultdigits = result.digits;
+	local xdigits = x.digits;
+	local ydigits = y.digits;
+	local i;
+	for i = 0, t - 1, 1 do
+		c = 0;
+		k = i;
+		for j = 0, n - 1, 1 do
+			uv = resultdigits[k] + xdigits[j] * ydigits[i] + c;
+			resultdigits[k] = uv % biRadix;
+			c = math.floor(uv / biRadix);
+			k = k + 1;
+		end
+		resultdigits[i + n] = c;
+	end
+	result.isNeg = (x.isNeg ~= y.isNeg);
+	return biNormalize(result);
+end
+
+
+
+
+qqq = biFromHex("16546a46a5646dd989798797987798d7987987987997d97d987987987987987e87e987987987987979879f879f879f87987a98a7987a97a9864d6464f64f6464b64b65465464a64a6546d46d4dd998798b79b87987c6");
+www = biFromHex("987979879797799797aa6a54654d465d464546454987987987a98798a79879d79d87987f987f987989f8798f79879879879c4c4654b64b654654f654f6466f6f6f546546a987a987979d");
+eee = biMultiply(qqq,www)
+
+print(biToHex(eee));
