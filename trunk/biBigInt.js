@@ -499,7 +499,7 @@ function biMultiply(x, y){
 	for (var i = 0; i < t; i++) {
 		c = 0;
 		k = i;
-		for (j = 0; j < n; j++, k++) {
+		for (var j = 0; j < n; j++, k++) {
 			uv = resultdigits[k] + xdigits[j] * ydigits[i] + c;
 			resultdigits[k] = uv & maxDigitVal;
 			c = uv >>> biRadixBits;
