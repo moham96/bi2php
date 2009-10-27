@@ -23,7 +23,7 @@ THE SOFTWARE.
 */
 // bi2php v0.1.79.alfa from http://code.google.com/p/bi2php/
 // Base on dave@ohdave.com
-
+// Now requires BigInt.js and Montgomery.js
 
 // RSA, a suite of routines for performing RSA public-key computations in
 // JavaScript.
