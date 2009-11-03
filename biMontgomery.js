@@ -28,7 +28,7 @@ function biModularInverse(e, m){
 	var result = biExtendedEuclid(m, e);
 	if (!result[2].isOne())
 		return null;
-	return result[1];
+	return biModulo(result[1], m);
 }
 
 function biExtendedEuclid(a, b){
