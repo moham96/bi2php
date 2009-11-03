@@ -430,11 +430,13 @@ function biSubtractNatural(x, y){
 		}		
 	}
 	while (c < 0 && i < nx){
-		if (resultdigits[i]){
-			resultdigits[i] += c;
-			c=0;
-			break;
-		}
+		if (xdigits[i] >=  - c){
+			resultdigits[i] = xdigits[i] + c;
+			c = 0;
+		}else{
+			resultdigits[i] = biRadix + xdigits[i] + c;
+			c = -1;		
+		}		
 		i++;
 	}	
 	return biNormalize(result);
@@ -605,7 +607,6 @@ function biMultiplyModByRadixPower(x, y, p){
 	result.isNeg = x.isNeg != y.isNeg;
 	return biNormalize(result);
 }
-
 
 function biDivideModuloNatural(x, y){
     var j0, j1, jm, qm, flag;
