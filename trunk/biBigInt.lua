@@ -56,6 +56,7 @@ function biEqual(bi0, bi1)
 end
 
 function biCopy(bi)
+print(biDump(bi))
   local result = biBigInt();
   result.isNeg = bi.isNeg;
   local nb = biHighIndex(bi);
@@ -439,8 +440,8 @@ function biSubtract(x, y)
 	end
 	local x_y = biCompareAbs(x , y);
 	if x_y == 0 then
-		return biCopy(bigZero);
-  elseif x_y > 0 then
+		return biCopy(biFromNumber(0));
+  elseif x_y >= 0 then
 		result = biSubtractNatural(x, y);
 		result.isNeg = x.isNeg;
 	elseif x_y < 0 then
@@ -585,7 +586,6 @@ function biMultiplyModByRadixPower(x, y, p)
   return biNormalize(result);
 end
 
-
 function biModuloByRadixPower(bi, n)
   local result = biBigInt();
   local nb = biHighIndex(bi);
@@ -596,6 +596,215 @@ function biModuloByRadixPower(bi, n)
   result.isNeg = bi.isNeg;
   return biNormalize(result);
 end
+
+function biModularInverse(e, m){
+	e = biModulo(e, m);
+	var result = biExtendedEuclid(m, e);
+	if (!result[2].isOne())
+		return null;
+	return biModulo(result[1], m);
+}
+
+function biExtendedEuclid(a, b)
+	if biCompare(a, b) >= 0 then
+		return biExtendedEuclidNatural(a, b);
+	end
+	local result = biExtendedEuclidNatural(b, a);
+	return {[0]=result[1], result[0], result[2]};
+end
+
+function biExtendedEuclidNatural(a, b)
+// calculates a * x + b * y = gcd(a, b)
+// require a >= b
+	local qr, q, r, x1, x2, y1, y2, x, y;
+	if biCompareAbs(b, bigZero) == 0 then
+		return [biFromNumber(1), biFromNumber(0), a];
+	end
+	x1 = biFromNumber(0);
+	x2 = biFromNumber(1);
+	y1 = biFromNumber(1);
+	y2 = biFromNumber(0);
+	while biCompareAbs(b, bigZero) ~= 0 do
+		qr = biDivideModulo(a, b);
+		q = qr[0];
+		r = qr[1];
+		x = biSubtract(x2, biMultiply(q, x1));
+		y = biSubtract(y2, biMultiply(q, y1));
+		a = b;
+		b = r;
+		x2 = x1;
+		x1 = x;
+		y2 = y1;
+		y1 = y;
+	end
+	return {[0]=x2, y2, a};
+end
+
+function biMontgomeryPowMod(T, EXP, N)
+	local result = biFromNumber(1);
+	local m = biModuloByRadixPower(biMultiply(T, N.Ri), N.nN);
+	for i = table.getn(EXP.bin), 0, -1 do
+		if (EXP.bin.charAt(i) == "1")
+			result = biMultiplyModByRadixPower(result, m, N.nN); //biModuloByRadixPower(biMultiply(result, m), N.nN);
+		m = biMultiplyModByRadixPower(m, m, N.nN); // biModuloByRadixPower(biMultiply(m, m), N.nN);
+	}
+	//result = biMultiplyByRadixPower(result, N.nN);
+	result = biAdd(T, result);
+	result = biModuloByRadixPower(result, N.nN);
+	if (biCompare(result, N) >= 0)
+		result = biSubtract(result, N);
+	if (result.isNeg || biCompare(result, N) >= 0){
+		result = biModulo(result, N);
+		//alert(biDump(result))
+	}
+	return result;
+}
+
+
+function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
+	this.e = biFromHex(encryptionExponent) || "0";
+	this.d = biFromHex(decryptionExponent) || "0";
+	this.m = biFromHex(modulus);
+	this.chunkSize = 2 * biHighIndex(this.m);
+	this.radix = 16;
+	// for Montgomery algorythm
+	this.m.nN = biHighIndex(this.m) + 1;
+	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
+	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
+	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
+	this.m.Ni = biMinus(this.m.EGCD[1]);
+	//this.m.Ni = biModulo(this.m.Ni, this.m.R);
+	this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
+	this.e.bin = biToString(this.e, 2);
+	this.d.bin = biToString(this.d, 2);
+}
+
+biRSAKeyPair.prototype.biEncryptedString = biEncryptedString;
+biRSAKeyPair.prototype.biDecryptedString = biDecryptedString;
+
+function biEncryptedString(s){
+// UTF-8 encode added. So some symbol is non-UTF-8 - #254, #255.
+// Terminate symbol #254 to prevent nonvalue zerro (0000xxx)
+// Left padding with random string to prevent from siple decrypt shon message.
+// Split by space is change to split by comma to prevent url encoding space to +
+//
+// Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
+// string after it has been converted to an array. This fixes an
+// incompatibility with Flash MX's ActionScript.
+	s = biUTF8Encode(s);
+	s = s.replace(/[\x00]/gm, String.fromCharCode(255)); //not UTF-8 zero replace
+	s = s + String.fromCharCode(254); //not UTF-8 terminal sybol
+	var sl = s.length;
+	s = s + biRandomPadding(this.chunkSize - sl % this.chunkSize);
+	var sl = s.length;
+	var result = "";
+	var i, j, k, block;
+	block = new BigInt();
+	for (var i = 0; i < sl; i += this.chunkSize) {
+		block.blankZero();
+		j = 0;
+		for (k = i; k < i + this.chunkSize && k < sl; ++j) {
+			block.digits[j] = s.charCodeAt(k++);
+			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
+		}
+		var crypt = biMontgomeryPowMod(block, this.e, this.m);
+		var text = biToHex(crypt);
+		result += text + ",";
+	}
+	return result.substring(0, result.length - 1); // Remove last space.
+}
+
+function biDecryptedString(s){
+	var blocks = s.split(",");
+	var result = "";
+	var i, j, block;
+	for (i = 0; i < blocks.length; ++i) {
+		var bi;
+		bi = biFromHex(blocks[i], 10);
+		block = biMontgomeryPowMod(bi, this.d, this.m);
+		for (j = 0; j <= biHighIndex(block); ++j) {
+			result += String.fromCharCode(block.digits[j] & 255,
+			                              block.digits[j] >> 8);
+		}
+	}
+	result = result.replace(/\xff/gm, String.fromCharCode(0));
+	result = result.substr(0, result.lastIndexOf(String.fromCharCode(254)));
+	return biUTF8Decode(result);
+}
+
+function biUTF8Encode(string){
+// Base on:
+/*
+ * jCryption JavaScript data encryption v1.0.1
+ * http://www.jcryption.org/
+ *
+ * Copyright (c) 2009 Daniel Griesser
+ * Dual licensed under the MIT and GPL licenses.
+ * http://www.opensource.org/licenses/mit-license.php
+ * http://www.opensource.org/licenses/gpl-2.0.php
+ *
+ * If you need any further information about this plugin please
+ * visit my homepage or contact me under daniel.griesser@jcryption.org
+ */
+	//string = string.replace(/\r\n/g,"\n");
+	var utftext = "";
+	var sl = string.length;
+	for (var n = 0; n < sl; n++){
+		var c = string.charCodeAt(n);
+ 		if (c < 128){
+			utftext += String.fromCharCode(c);
+		}else if((c > 127) && (c < 2048)){
+				utftext += String.fromCharCode((c >> 6) | 192);
+				utftext += String.fromCharCode((c & 63) | 128);
+		}else{
+			utftext += String.fromCharCode((c >> 12) | 224);
+			utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+			utftext += String.fromCharCode((c & 63) | 128);
+		}
+ 	}
+ 	return utftext;
+}
+
+function biUTF8Decode(s)
+	local utftext = "";
+	local sl = s:len();
+	local charCode;
+	local n = 0;
+	while n < sl do
+	local c = s:byte(n);
+ 		if c < 128 then
+			utftext = utftext .. string.char(c);
+			charCode = 0;
+		elseif c > 191 and c < 224 then
+			charCode = c % 32 * 64;
+			n = n + 1;
+			c = s:byte(n);
+			charCode = charCode + c % 64;
+			utftext = utftext .. string.char(charCode);
+		else
+			charCode = c % 16 * 64 * 64;
+			n = n + 1;
+			c = s.byte(n);
+			charCode = charCode + c % 64 * 64);
+			n = n + 1;
+			c = s.byte(n);
+			charCode = charCode + c % 64;
+			utftext = utftext .. string.char(charCode);
+		end
+ 	end
+ 	return utftext;
+end
+
+function biRandomPadding(n)
+	local result = "";
+	for i = 0, n - 1, 1 do
+		result = result .. string.char(math.floor(math.random()*126) + 1);
+	end
+	return result;
+end
+
+
+
 
 local bigOne = biFromNumber(1);
 local bigZero = biFromNumber(0);
