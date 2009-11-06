@@ -29,8 +29,8 @@ class biRSAKeyPair{
 	var $d;
 	var $m;
 	function biRSAKeyPair($encryptionExponent, $decryptionExponent, $modulus){
-		$this->e = self::biFromHex($encryptionExponent) || '0';
-		$this->d = self::biFromHex($decryptionExponent) || '0';
+		$this->e = self::biFromHex($encryptionExponent);
+		$this->d = self::biFromHex($decryptionExponent);
 		$this->m = self::biFromHex($modulus);
 		// We can do two bytes per digit, so
 		// chunkSize = 2 * (number of digits in modulus - 1).
@@ -124,7 +124,7 @@ class biRSAKeyPair{
 		$hl = strlen($hexnumber);
 		while ($hl--){
 			$result = bcadd(bcmul(self::$decimal[substr($hexnumber, $hl, 1)], $faktor), $result);
-			$faktor = bcmul($faktor, 16);
+			$faktor = bcmul($faktor, '16');
 		}
 		return $sign . $result;	
 	}
