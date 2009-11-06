@@ -66,20 +66,47 @@ function biExtendedEuclidNatural(a, b){
 
 function biMontgomeryPowMod(T, EXP, N){
 	var result = biFromNumber(1);
-	var m = biModuloByRadixPower(biMultiply(T, N.Ri), N.nN);
+	var m = biCopy(T);
 	for (var i = EXP.bin.length - 1; i > -1; i--){
-		if (EXP.bin.charAt(i) == "1")
-			result = biMultiplyModByRadixPower(result, m, N.nN); //biModuloByRadixPower(biMultiply(result, m), N.nN);
-		m = biMultiplyModByRadixPower(m, m, N.nN); // biModuloByRadixPower(biMultiply(m, m), N.nN);
+	//alert(i + "=" + biToHex(result))
+		if (EXP.bin.charAt(i) == "1"){
+			//result = biMultiplyModByRadixPower(result, m, N.nN); 
+			//result = biDivideByRadixPower(biMultiply(result, m), N.nN);
+			result = biMultiply(result, m);
+			result = biMontgomeryModulo(result, N)
+		}
+		//m = biMultiplyModByRadixPower(m, m, N.nN); 
+		//m = biModuloByRadixPower(biMultiply(m, m), N.nN);
+		m = biMultiply(m, m);
+		m = biMontgomeryModulo(m, N)
 	}
 	//result = biMultiplyByRadixPower(result, N.nN);
-	result = biAdd(T, result);
+	/*result = biAdd(T, result);
 	result = biModuloByRadixPower(result, N.nN);
 	if (biCompare(result, N) >= 0)
 		result = biSubtract(result, N);
 	if (result.isNeg || biCompare(result, N) >= 0){
 		result = biModulo(result, N);
 		//alert(biDump(result))
-	}
+	}*/
 	return result;
 }
+
+function biMontgomeryModulo(T, N){
+        //alert( biDump(biSubtract(biMultiply(N.R, N.Ri),biMultiply(N, N.Ni))))
+        var m = biModulo(T, N.R);
+        m = biMultiply(m, N.Ni);
+        m = biModulo(m, N.R);
+        m = biMultiply(m, N);
+        m = biAdd(T, m);
+        // m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
+        m  = biDivide(m, N.R);
+        while (biCompare(m, N) >= 0){
+                m = biSubtract(m, N);
+		}
+		alert(biDump(m))
+        alert(biDump(biModulo(biMultiply(T, N.Rinv),N)))
+		alert(biDump(biSubtract(m,biModulo(biMultiply(T, N.Rinv),N))))
+        return m;
+}
+
