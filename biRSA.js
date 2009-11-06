@@ -41,8 +41,8 @@ THE SOFTWARE.
 // dave@ohdave.com 
 
 function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
-	this.e = biFromHex(encryptionExponent) || "0";
-	this.d = biFromHex(decryptionExponent) || "0";
+	this.e = biFromHex(encryptionExponent);
+	this.d = biFromHex(decryptionExponent);
 	this.m = biFromHex(modulus);
 	this.chunkSize = 2 * biHighIndex(this.m);
 	this.radix = 16;
@@ -50,10 +50,11 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.m.nN = biHighIndex(this.m) + 1;
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
 	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
-	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
+	this.m.Ri = this.m.EGCD[0];
+	this.m.Rinv = biAdd(this.m.EGCD[0], this.m);
 	this.m.Ni = biMinus(this.m.EGCD[1]);
 	//this.m.Ni = biModulo(this.m.Ni, this.m.R);
-	this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
+	//this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
 	this.e.bin = biToString(this.e, 2);
 	this.d.bin = biToString(this.d, 2);
 }
@@ -86,7 +87,9 @@ function biEncryptedString(s){
 			block.digits[j] = s.charCodeAt(k++);
 			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
+		//alert("+"+biToHex(block))
 		var crypt = biMontgomeryPowMod(block, this.e, this.m);
+		//alert("-"+biToHex(crypt))
 		var text = biToHex(crypt);
 		result += text + ",";
 	}
