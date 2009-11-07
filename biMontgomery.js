@@ -66,7 +66,7 @@ function biExtendedEuclidNatural(a, b){
 
 function biMontgomeryPowMod(T, EXP, N){
 	var result = biFromNumber(1);
-	var m = biCopy(T);
+	var m = biModulo(biMultiply(T, N.R), N);
 	for (var i = EXP.bin.length - 1; i > -1; i--){
 	//alert(i + "=" + biToHex(result))
 		if (EXP.bin.charAt(i) == "1"){
@@ -94,19 +94,17 @@ function biMontgomeryPowMod(T, EXP, N){
 
 function biMontgomeryModulo(T, N){
         //alert( biDump(biSubtract(biMultiply(N.R, N.Ri),biMultiply(N, N.Ni))))
-        var m = biModulo(T, N.R);
-        m = biMultiply(m, N.Ni);
-        m = biModulo(m, N.R);
+        var m = biModuloByRadixPower(T, N.nN);
+        //m = biMultiply(m, N.Ni);
+        m = biMultiply(m, N.Ninv);
+        m = biModuloByRadixPower(m, N.nN);
         m = biMultiply(m, N);
         m = biAdd(T, m);
         // m=biAdd(T, biMultiply(biModuloByRadixPower(m, nN), N));
-        m  = biDivide(m, N.R);
+        m  = biDivideByRadixPower(m, N.nN);
         while (biCompare(m, N) >= 0){
                 m = biSubtract(m, N);
 		}
-		alert(biDump(m))
-        alert(biDump(biModulo(biMultiply(T, N.Rinv),N)))
-		alert(biDump(biSubtract(m,biModulo(biMultiply(T, N.Rinv),N))))
         return m;
 }
 
