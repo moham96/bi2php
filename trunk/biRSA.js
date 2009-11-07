@@ -88,9 +88,7 @@ function biEncryptedString(s){
 			block.digits[j] = s.charCodeAt(k++);
 			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
-		//alert("+"+biToHex(block))
 		var crypt = biMontgomeryPowMod(block, this.e, this.m);
-		//alert("-"+biToHex(crypt))
 		var text = biToHex(crypt);
 		result += text + ",";
 	}
