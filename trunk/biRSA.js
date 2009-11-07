@@ -51,8 +51,9 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
 	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
 	this.m.Ri = this.m.EGCD[0];
-	this.m.Rinv = biAdd(this.m.EGCD[0], this.m);
+	this.m.Rinv = biModulo(this.m.EGCD[0], this.m);
 	this.m.Ni = biMinus(this.m.EGCD[1]);
+	this.m.Ninv = biModulo(biMinus(this.m.EGCD[1]), this.m.R);
 	//this.m.Ni = biModulo(this.m.Ni, this.m.R);
 	//this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
 	this.e.bin = biToString(this.e, 2);
