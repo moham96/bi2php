@@ -602,8 +602,9 @@ function biMultiplyModByRadixPower(x, y, p){
 			resultdigits[k] = uv & maxDigitVal;
 			c = uv >>> biRadixBits;
 		}
-		//resultdigits[i + n] = c;
+		resultdigits[i + n] = c;
 	}
+	result = biModuloByRadixPower(result, p)
 	result.isNeg = x.isNeg != y.isNeg;
 	return biNormalize(result);
 }
