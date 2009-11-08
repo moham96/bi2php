@@ -1,5 +1,8 @@
+require("list");
+require("string_ext");
+
 local biRadixBase = 2;
-local biRadixBits = 8;
+local biRadixBits = 16;
     --biRadixBits = biRadixBits - biRadixBits % 4;
 local bitsPerDigit = biRadixBits;
 biRadix = 2 ^ biRadixBits; --// = 2^16 = 65536
@@ -24,17 +27,13 @@ function biBigInt(n)
 end
 
 function biBlankZero(bi)
-  while table.remove(bi.digits) do
-  end
   table.isNeg = false;
-  table.digits[0] = 0;
+  bi.digits = {[0]=0};
 end
 
 function biBlankOne(bi)
-  while table.remove(bi.digits) do
-  end
   table.isNeg = false;
-  table.digits[0] = 1;
+  bi.digits = {[0]=1};
 end
 
 
@@ -55,8 +54,17 @@ function biEqual(bi0, bi1)
   return true;
 end
 
+function biIsOne(bi)
+  local nb = biHighIndex(bi);
+  return nb == 0 and not bi.isNeg and bi.digits[0] == 1;
+end
+
+function biIsZero(bi)
+  local nb = biHighIndex(bi);
+  return nb == 0 and bi.digits[0] == 0;
+end
+
 function biCopy(bi)
-print(biDump(bi))
   local result = biBigInt();
   result.isNeg = bi.isNeg;
   local nb = biHighIndex(bi);
@@ -69,6 +77,16 @@ end
 function biAbs(bi)
   local result = biBigInt();
   result.isNeg = false;
+  local nb = biHighIndex(bi);
+  for i = 0, nb, 1 do
+    result.digits[i] = bi.digits[i]
+  end
+  return result;
+end
+
+function biMinus(bi)
+  local result = biBigInt();
+  result.isNeg = not bi.isNeg;
   local nb = biHighIndex(bi);
   for i = 0, nb, 1 do
     result.digits[i] = bi.digits[i]
@@ -223,6 +241,46 @@ function digitToHexTrunk(n)
   return result;
 end
 
+local numToChar = {[0]='0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+ 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+ 'u', 'v', 'w', 'x', 'y', 'z'
+};
+
+function biToString(x, radix)
+-- require 2 <= radix <= 36
+--	if radix == 16 then
+--		return biToHex(x);
+--  end
+	local b = biFromNumber(radix);
+	local qr = biDivideModulo(biAbs(x), b);
+	local result = numToChar[qr[1].digits[0]];
+	while not biIsZero(qr[0]) do
+		qr = biDivideModulo(qr[0], b);
+		result = numToChar[qr[1].digits[0]] .. result;
+	end
+	return biIIF(x.isNeg, "-", "") .. result;
+end
+
+function biFromString(s, radix)
+--	if radix == 16 then
+--		return biFromHex(s);
+--  end
+	local isNeg = s:sub(1) == '-';
+	local first = biIIF(isNeg, 2, 1);
+	local result = biBigInt();
+	local place = biFromNumber(1);
+	for i = s:len(), first, -1 do
+		local c = s:byte(i);
+		local digit = charToHex(c);
+		local biDigit = biMultiplyDigit(place, digit);
+		result = biAdd(result, biDigit);
+		place = biMultiplyDigit(place, radix);
+	end
+	result.isNeg = isNeg;
+	return biNormalize(result);
+end
+
 function reverseStr(s)
   local result = "";
   for i = s:len(), 1, -1 do
@@ -262,7 +320,7 @@ function biDump(bi, s)
     term = "..";
   end
   for i = nb, 0, -1 do
-    s = s .. term .. bi.digits[i];
+    s = s .. term .."[".. i .."]=" .. bi.digits[i];
   end
   return s;
 end
@@ -311,157 +369,157 @@ function biIF(x, y)
 end
 
 function biCompareAbs(x, y)
-	local nx = biHighIndex(x);
-	local ny = biHighIndex(y);
-	if nx ~= ny then
-		return biIIF(nx > ny, 1, -1);
+  local nx = biHighIndex(x);
+  local ny = biHighIndex(y);
+  if nx ~= ny then
+    return biIIF(nx > ny, 1, -1);
   end
-	for i = table.maxn(x.digits), 0, -1 do
-		if x.digits[i] ~= y.digits[i] then
-			return biIIF(x.digits[i] > y.digits[i], 1, -1);
+  for i = table.maxn(x.digits), 0, -1 do
+    if x.digits[i] ~= y.digits[i] then
+      return biIIF(x.digits[i] > y.digits[i], 1, -1);
     end
   end
-	return 0;
+  return 0;
 end
 
 function biCompare(x, y)
-	if x.isNeg ~= y.isNeg then
-		return biIIF(x.isNeg, -1, 1);
+  if x.isNeg ~= y.isNeg then
+    return biIIF(x.isNeg, -1, 1);
   end;
-	return biIIF(x.isNeg, biCompareAbs(y, x), biCompareAbs(x, y));
+  return biIIF(x.isNeg, biCompareAbs(y, x), biCompareAbs(x, y));
 end
 
 function biAddNatural(x, y)
   local nx, ny, i, c, result, source, k;
-	nx = biHighIndex(x) + 1;
-	ny = biHighIndex(y) + 1;
-	i = 0;
-	c = 0;
-	if nx > ny then
-		result = biAbs(x);
-		source = y;
-		k = ny;
-	else
-		result = biAbs(y);
-		source = x;
-		k = nx;
-	end
-	while i < k do
-		result.digits[i] = result.digits[i] + source.digits[i] + c;
-		if result.digits[i] < biRadix then
-			c = 0;
-		else
-			result.digits[i] = result.digits[i] % biRadix;
-			c = 1;
-		end
-		i = i +1;
-	end
-	while c > 0 do
-		result.digits[i] = biIF(result.digits[i], 0) + c;
-		if result.digits[i] < biRadix then
-			c = 0;
-		else
-			result.digits[i] = result.digits[i] % biRadix;
-			c = 1;
-		end
-		i = i + 1;
-	end
-	return result;
+  nx = biHighIndex(x) + 1;
+  ny = biHighIndex(y) + 1;
+  i = 0;
+  c = 0;
+  if nx > ny then
+    result = biAbs(x);
+    source = y;
+    k = ny;
+  else
+    result = biAbs(y);
+    source = x;
+    k = nx;
+  end
+  while i < k do
+    result.digits[i] = result.digits[i] + source.digits[i] + c;
+    if result.digits[i] < biRadix then
+      c = 0;
+    else
+      result.digits[i] = result.digits[i] % biRadix;
+      c = 1;
+    end
+    i = i +1;
+  end
+  while c > 0 do
+    result.digits[i] = biIF(result.digits[i], 0) + c;
+    if result.digits[i] < biRadix then
+      c = 0;
+    else
+      result.digits[i] = result.digits[i] % biRadix;
+      c = 1;
+    end
+    i = i + 1;
+  end
+  return result;
 end
 
 function biSubtractNatural(x, y)
 -- require x >= y
   local nx, ny, result, resultdigits, xdigits, ydigits, c;
   local lasti = 0;
-	nx = biHighIndex(x) + 1;
-	ny = biHighIndex(y) + 1;
-	result = biAbs(x);
-	resultdigits = result.digits;
-	xdigits = x.digits;
-	ydigits = y.digits;
-	c = 0;
-	for i = 0, ny - 1, 1 do
+  nx = biHighIndex(x) + 1;
+  ny = biHighIndex(y) + 1;
+  result = biAbs(x);
+  resultdigits = result.digits;
+  xdigits = x.digits;
+  ydigits = y.digits;
+  c = 0;
+  for i = 0, ny - 1, 1 do
     lasti = i + 1;
-		if xdigits[i] >= ydigits[i] - c then
-			resultdigits[i] = xdigits[i] - ydigits[i] + c;
-			c = 0;
-		else
-			resultdigits[i] = biRadix + xdigits[i] - ydigits[i] + c;
-			c = -1;
-		end
-	end
-	while c < 0 and lasti < nx do
-		if xdigits[lasti] >=  - c then
-			resultdigits[lasti] = xdigits[lasti] + c;
-			c = 0;
-		else
-			resultdigits[lasti] = biRadix + xdigits[lasti] + c;
-			c = -1;
-		end
-		lasti = lasti + 1;
-	end
-	return biNormalize(result);
+    if xdigits[i] >= ydigits[i] - c then
+      resultdigits[i] = xdigits[i] - ydigits[i] + c;
+      c = 0;
+    else
+      resultdigits[i] = biRadix + xdigits[i] - ydigits[i] + c;
+      c = -1;
+    end
+  end
+  while c < 0 and lasti < nx do
+    if xdigits[lasti] >=  - c then
+      resultdigits[lasti] = xdigits[lasti] + c;
+      c = 0;
+    else
+      resultdigits[lasti] = biRadix + xdigits[lasti] + c;
+      c = -1;
+    end
+    lasti = lasti + 1;
+  end
+  return biNormalize(result);
 end
 
 function biAdd(x, y)
-	local result;
-	if not x.isNeg and not y.isNeg then
-		return biAddNatural(x, y);
+  local result;
+  if not x.isNeg and not y.isNeg then
+    return biAddNatural(x, y);
   end
-	if x.isNeg and y.isNeg then
-		result = biAddNatural(x, y);
-		result.isNeg = true;
-		return result;
-	end
-	local x_y = biCompareAbs(x , y);
-	if x_y == 0 then
-		return biFromNumber(0);
+  if x.isNeg and y.isNeg then
+    result = biAddNatural(x, y);
+    result.isNeg = true;
+    return result;
   end
-	if x_y > 0 then
-		result = biSubtractNatural(x, y);
-		result.isNeg = x.isNeg;
-	end
-	if x_y < 0 then
-		result = biSubtractNatural(y, x);
-		result.isNeg = y.isNeg;
-	end
-	return result;
+  local x_y = biCompareAbs(x , y);
+  if x_y == 0 then
+    return biFromNumber(0);
+  end
+  if x_y > 0 then
+    result = biSubtractNatural(x, y);
+    result.isNeg = x.isNeg;
+  end
+  if x_y < 0 then
+    result = biSubtractNatural(y, x);
+    result.isNeg = y.isNeg;
+  end
+  return result;
 end
 
 function biSubtract(x, y)
-	local result;
-	if not x.isNeg and y.isNeg then
-		return biAddNatural(x, y);
+  local result;
+  if not x.isNeg and y.isNeg then
+    return biAddNatural(x, y);
   end
-	if x.isNeg and not y.isNeg then
-		result = biAddNatural(x, y);
-		result.isNeg = true;
-		return result;
-	end
-	local x_y = biCompareAbs(x , y);
-	if x_y == 0 then
-		return biCopy(biFromNumber(0));
+  if x.isNeg and not y.isNeg then
+    result = biAddNatural(x, y);
+    result.isNeg = true;
+    return result;
+  end
+  local x_y = biCompareAbs(x , y);
+  if x_y == 0 then
+    return biCopy(biFromNumber(0));
   elseif x_y >= 0 then
-		result = biSubtractNatural(x, y);
-		result.isNeg = x.isNeg;
-	elseif x_y < 0 then
-		result = biSubtractNatural(y, x);
-		result.isNeg = not x.isNeg;
-	end
-	return result;
+    result = biSubtractNatural(x, y);
+    result.isNeg = x.isNeg;
+  elseif x_y < 0 then
+    result = biSubtractNatural(y, x);
+    result.isNeg = not x.isNeg;
+  end
+  return result;
 end
 
 function biMultiplyDigit(x, y)
-	local n = biHighIndex(x) + 1;
-	local result = biBigInt(n);
-	local c = 0;
-	for j = 0, n - 1, 1 do
-		local uv = result.digits[j] + x.digits[j] * y + c;
-		result.digits[j] = uv % biRadix;
-		c = math.floor(uv / biRadix);
-	end
-	result.digits[n] = c;
-	return result;
+  local n = biHighIndex(x) + 1;
+  local result = biBigInt(n);
+  local c = 0;
+  for j = 0, n - 1, 1 do
+    local uv = result.digits[j] + x.digits[j] * y + c;
+    result.digits[j] = uv % biRadix;
+    c = math.floor(uv / biRadix);
+  end
+  result.digits[n] = c;
+  return result;
 end
 
 function biDivideModuloNatural(x, y)
@@ -480,8 +538,8 @@ function biDivideModuloNatural(x, y)
       --continue;
     elseif flag == 0 then
       table.insert(q.digits, 0, 1);
-			biBlankZero(r);
-		else
+      biBlankZero(r);
+    else
       nr = biHighIndex(r);
       if nr == ny then
         jm = math.floor((r.digits[nr] * biRadix + biIF(r.digits[nr - 1], 0))
@@ -511,49 +569,49 @@ function biDivideModuloNatural(x, y)
 end
 
 function biDivideModulo(x, y)
-	local q, r;
-	if biCompareAbs(x, y) < 0 then
-		if (x.isNeg and y.isNeg) or (not x.isNeg and not y.isNeg) then
-			q = biFromNumber(0);
-			r= biCopy(x);
-		else
-			q = biFromNumber(-1);
-			r = biAdd(y, x);
-		end
-		return {[0]=q, r};
-	end
-	local origXIsNeg = x.isNeg;
-	local origYIsNeg = y.isNeg;
-	local result = biDivideModuloNatural(biAbs(x), biAbs(y));
-	q = result[0];
-	r = result[1];
-	if not origXIsNeg and not origYIsNeg then
-		return {[0]=q, r};
-	elseif origXIsNeg and origYIsNeg then
-		r.isNeg = true;
-		return {[0]=q, r};
-	else
-		q.isNeg = true;
-		q = biSubtract(q, bigOne);
-		r.isNeg = origXIsNeg;
-		r = biAdd(r, y);
-	end
-	if r.digits[0] == 0 and biHighIndex(r) == 0 then
-		r.isNeg = false;
+  local q, r;
+  if biCompareAbs(x, y) < 0 then
+    if (x.isNeg and y.isNeg) or (not x.isNeg and not y.isNeg) then
+      q = biFromNumber(0);
+      r= biCopy(x);
+    else
+      q = biFromNumber(-1);
+      r = biAdd(y, x);
+    end
+    return {[0]=q, r};
   end
-	return {[0]=q, r};
+  local origXIsNeg = x.isNeg;
+  local origYIsNeg = y.isNeg;
+  local result = biDivideModuloNatural(biAbs(x), biAbs(y));
+  q = result[0];
+  r = result[1];
+  if not origXIsNeg and not origYIsNeg then
+    return {[0]=q, r};
+  elseif origXIsNeg and origYIsNeg then
+    r.isNeg = true;
+    return {[0]=q, r};
+  else
+    q.isNeg = true;
+    q = biSubtract(q, bigOne);
+    r.isNeg = origXIsNeg;
+    r = biAdd(r, y);
+  end
+  if r.digits[0] == 0 and biHighIndex(r) == 0 then
+    r.isNeg = false;
+  end
+  return {[0]=q, r};
 end
 
 function biDivide(x, y)
-	return biDivideModulo(x, y)[0];
+  return biDivideModulo(x, y)[0];
 end
 
 function biModulo(x, y)
-	return biDivideModulo(x, y)[1];
+  return biDivideModulo(x, y)[1];
 end
 
 function biMultiplyMod(x, y, m)
-	return biModulo(biMultiply(x, y), m);
+  return biModulo(biMultiply(x, y), m);
 end
 
 function biMultiplyModByRadixPower(x, y, p)
@@ -580,8 +638,9 @@ function biMultiplyModByRadixPower(x, y, p)
       c = math.floor(uv / biRadix);
       k = k + 1;
     end
-    --resultdigits[i + n] = c;
+    resultdigits[i + n] = c;
   end
+  result = biModuloByRadixPower(result, n);
   result.isNeg = (x.isNeg ~= y.isNeg);
   return biNormalize(result);
 end
@@ -597,210 +656,255 @@ function biModuloByRadixPower(bi, n)
   return biNormalize(result);
 end
 
-function biModularInverse(e, m){
-	e = biModulo(e, m);
-	var result = biExtendedEuclid(m, e);
-	if (!result[2].isOne())
-		return null;
-	return biModulo(result[1], m);
-}
+function biMultiplyByRadixPower(bi, n)
+  local result = biCopy(bi);
+  for i = 1, n, 1 do
+    table.insert(result.digits, 0, 0);
+  end
+  return result;
+end
+
+function biDivideByRadixPower(bi, n)
+  local result = biCopy(bi);
+  if n < 1 then
+    return result;
+  end
+  local nb = biHighIndex(result)
+  if nb < n then
+    return biFromNumber(0);
+  end
+  for i = 1, n, 1 do
+    result.digits[0] = table.remove(result.digits, 1);
+  end
+  return result;
+end
+
+--[[function biShiftRight(x, n)
+	local digitCount = math.floor(n / bitsPerDigit);
+	local result = new BigInt();
+	arrayCopy(x.digits, digitCount, result.digits, 0,
+	          x.digits.length - digitCount);
+	var bits = n % bitsPerDigit;
+	var leftBits = bitsPerDigit - bits;
+	for (var i = 0, i1 = i + 1; i < result.digits.length - 1; ++i, ++i1) {
+		result.digits[i] = (result.digits[i] >>> bits) |
+		                   ((result.digits[i1] & lowBitMasks[bits]) << leftBits);
+	}
+	result.digits[result.digits.length - 1] >>>= bits;
+	result.isNeg = x.isNeg;
+	return result;
+end]]
+
+
+function biModularInverse(e, m)
+  e = biModulo(e, m);
+  local result = biExtendedEuclid(m, e);
+  if not biIsOne(result[2]) then
+    return nil;
+  end
+  return biModulo(result[1], m);
+end
 
 function biExtendedEuclid(a, b)
-	if biCompare(a, b) >= 0 then
-		return biExtendedEuclidNatural(a, b);
-	end
-	local result = biExtendedEuclidNatural(b, a);
-	return {[0]=result[1], result[0], result[2]};
+  if biCompare(a, b) >= 0 then
+    return biExtendedEuclidNatural(a, b);
+  end
+  local result = biExtendedEuclidNatural(b, a);
+  return {[0]=result[1], result[0], result[2]};
 end
 
 function biExtendedEuclidNatural(a, b)
-// calculates a * x + b * y = gcd(a, b)
-// require a >= b
-	local qr, q, r, x1, x2, y1, y2, x, y;
-	if biCompareAbs(b, bigZero) == 0 then
-		return [biFromNumber(1), biFromNumber(0), a];
-	end
-	x1 = biFromNumber(0);
-	x2 = biFromNumber(1);
-	y1 = biFromNumber(1);
-	y2 = biFromNumber(0);
-	while biCompareAbs(b, bigZero) ~= 0 do
-		qr = biDivideModulo(a, b);
-		q = qr[0];
-		r = qr[1];
-		x = biSubtract(x2, biMultiply(q, x1));
-		y = biSubtract(y2, biMultiply(q, y1));
-		a = b;
-		b = r;
-		x2 = x1;
-		x1 = x;
-		y2 = y1;
-		y1 = y;
-	end
-	return {[0]=x2, y2, a};
+-- calculates a * x + b * y = gcd(a, b)
+-- require a >= b
+  local qr, q, r, x1, x2, y1, y2, x, y;
+  if biIsZero(b) then
+    return {[0]=biFromNumber(1), biFromNumber(0), a};
+  end
+  x1 = biFromNumber(0);
+  x2 = biFromNumber(1);
+  y1 = biFromNumber(1);
+  y2 = biFromNumber(0);
+  while not biIsZero(b) do
+    qr = biDivideModulo(a, b);
+    q = qr[0];
+    r = qr[1];
+    x = biSubtract(x2, biMultiply(q, x1));
+    y = biSubtract(y2, biMultiply(q, y1));
+    a = b;
+    b = r;
+    x2 = x1;
+    x1 = x;
+    y2 = y1;
+    y1 = y;
+  end
+  return {[0]=x2, y2, a};
 end
 
 function biMontgomeryPowMod(T, EXP, N)
 	local result = biFromNumber(1);
-	local m = biModuloByRadixPower(biMultiply(T, N.Ri), N.nN);
-	for i = table.getn(EXP.bin), 0, -1 do
-		if (EXP.bin.charAt(i) == "1")
-			result = biMultiplyModByRadixPower(result, m, N.nN); //biModuloByRadixPower(biMultiply(result, m), N.nN);
-		m = biMultiplyModByRadixPower(m, m, N.nN); // biModuloByRadixPower(biMultiply(m, m), N.nN);
-	}
-	//result = biMultiplyByRadixPower(result, N.nN);
-	result = biAdd(T, result);
-	result = biModuloByRadixPower(result, N.nN);
-	if (biCompare(result, N) >= 0)
-		result = biSubtract(result, N);
-	if (result.isNeg || biCompare(result, N) >= 0){
-		result = biModulo(result, N);
-		//alert(biDump(result))
-	}
+	local m = biCopy(T);--biModulo(biMultiply(T, N.R), N);
+  local bin = biToString(EXP, 2);
+	for i = bin:len(), 1, -1 do
+    if bin:sub(i, i) == "1" then
+			result = biMultiply(result, m);
+			result = biMontgomeryModulo(result, N)
+		end
+		m = biMultiply(m, m);
+		m = biMontgomeryModulo(m, N);
+	end
 	return result;
-}
+end
 
+function biMontgomeryModulo(T, N)
+  return biModulo(T, N);
+end
 
-function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
-	this.e = biFromHex(encryptionExponent) || "0";
-	this.d = biFromHex(decryptionExponent) || "0";
-	this.m = biFromHex(modulus);
-	this.chunkSize = 2 * biHighIndex(this.m);
-	this.radix = 16;
-	// for Montgomery algorythm
+function biMontgomeryModulo0(T, N)
+  local m = biModuloByRadixPower(T, N.nN);
+	m = biMultiplyModByRadixPower(m, N.Ninv, N.nN)
+  m = biMultiply(m, N);
+  m = biAdd(T, m);
+  m = biDivideByRadixPower(m, N.nN);
+  while biCompare(m, N) >= 0 do
+    m = biSubtract(m, N);
+	end
+  return m;
+end
+
+biRSAKeyPair = {};
+
+function biRSAKeyPair:new(encryptionExponent, decryptionExponent, modulus)
+  local this = {};
+  setmetatable(this, self)
+  self.__index = self
+  this.e = biFromHex(encryptionExponent);
+  this.d = biFromHex(decryptionExponent);
+  this.m = biFromHex(modulus);
+  this.chunkSize = 2 * biHighIndex(this.m);
+  this.radix = 16;
+	-- for Montgomery algorythm
 	this.m.nN = biHighIndex(this.m) + 1;
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
-	this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
-	this.m.Ri = biModulo(this.m.EGCD[0], this.m);
+  this.m.EGCD = biExtendedEuclid(this.m.R, this.m);
+	this.m.Ri = this.m.EGCD[0];
+	this.m.Rinv = biModulo(this.m.EGCD[0], this.m);
 	this.m.Ni = biMinus(this.m.EGCD[1]);
-	//this.m.Ni = biModulo(this.m.Ni, this.m.R);
-	this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
+	this.m.Ninv = biModulo(biMinus(this.m.EGCD[1]), this.m.R);
+	--this.m.Ni = biModulo(this.m.Ni, this.m.R);
+	--this.m.Ni = biModuloByRadixPower(this.m.Ni, this.m.nN);
 	this.e.bin = biToString(this.e, 2);
+  print(this.e.bin)
+  print(biToHex(this.e))
+  print(biToHex(biFromString(this.e.bin,2)))
 	this.d.bin = biToString(this.d, 2);
-}
+  return this;
+end
 
-biRSAKeyPair.prototype.biEncryptedString = biEncryptedString;
-biRSAKeyPair.prototype.biDecryptedString = biDecryptedString;
+function biRSAKeyPair:encryptedString(s)
+  local sl = s:len();
+  local result = "";
+  local i, j, k, block;
+  block = biBigInt();
+  for i = 1, sl, self.chunkSize do
+    biBlankZero(block);
+    j = 0;
+    k = i;
+    while k < i + self.chunkSize and k < sl do
+      block.digits[j] = s:byte(k);
+      k = k + 1;
+      block.digits[j] = block.digits[j] + s:byte(k) * 256;
+      k = k + 1;
+      j = j + 1;
+    end
+    print(biToString(block,10).."=block");
+    print(biToString(self.e,10))
+    print(biToString(self.m,10))
+    local crypt = biMontgomeryPowMod(block, self.e, self.m);
+    print(biToString(crypt,10).."=crypt");
+    local decrypt=biMontgomeryPowMod(crypt, self.d, self.m)
+    print(biDump(decrypt).."=decrypt")
+    local text = biToHex(crypt);
+    result = result .. text .. ",";
+  end
+  return result:sub(1, -2);
+end
 
-function biEncryptedString(s){
-// UTF-8 encode added. So some symbol is non-UTF-8 - #254, #255.
-// Terminate symbol #254 to prevent nonvalue zerro (0000xxx)
-// Left padding with random string to prevent from siple decrypt shon message.
-// Split by space is change to split by comma to prevent url encoding space to +
-//
-// Altered by Rob Saunders (rob@robsaunders.net). New routine pads the
-// string after it has been converted to an array. This fixes an
-// incompatibility with Flash MX's ActionScript.
-	s = biUTF8Encode(s);
-	s = s.replace(/[\x00]/gm, String.fromCharCode(255)); //not UTF-8 zero replace
-	s = s + String.fromCharCode(254); //not UTF-8 terminal sybol
-	var sl = s.length;
-	s = s + biRandomPadding(this.chunkSize - sl % this.chunkSize);
-	var sl = s.length;
-	var result = "";
-	var i, j, k, block;
-	block = new BigInt();
-	for (var i = 0; i < sl; i += this.chunkSize) {
-		block.blankZero();
-		j = 0;
-		for (k = i; k < i + this.chunkSize && k < sl; ++j) {
-			block.digits[j] = s.charCodeAt(k++);
-			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
-		}
-		var crypt = biMontgomeryPowMod(block, this.e, this.m);
-		var text = biToHex(crypt);
-		result += text + ",";
-	}
-	return result.substring(0, result.length - 1); // Remove last space.
-}
+function biRSAKeyPair:decryptedString(s)
+  local blocks = string.split(",", s);
+  local result = "";
+  local i, j, block;
+  for i = 1, table.getn(blocks), 1 do
+    local bi;
+    bi = biFromHex(blocks[i]);
+    print(biDump(bi),"=bi")
+    block = biMontgomeryPowMod(bi, self.d, self.m);
+    for j = 0, biHighIndex(block), 1 do
+      result = result .. string.char(block.digits[j] % 256, math.floor(block.digits[j] / 256));
+    end
+  end
+  --result = result.replace(/\xff/gm, String.fromCharCode(0));
+  --result = result.substr(0, result.lastIndexOf(String.fromCharCode(254)));
+  return result; --biUTF8Decode(result);
+end
 
-function biDecryptedString(s){
-	var blocks = s.split(",");
-	var result = "";
-	var i, j, block;
-	for (i = 0; i < blocks.length; ++i) {
-		var bi;
-		bi = biFromHex(blocks[i], 10);
-		block = biMontgomeryPowMod(bi, this.d, this.m);
-		for (j = 0; j <= biHighIndex(block); ++j) {
-			result += String.fromCharCode(block.digits[j] & 255,
-			                              block.digits[j] >> 8);
-		}
-	}
-	result = result.replace(/\xff/gm, String.fromCharCode(0));
-	result = result.substr(0, result.lastIndexOf(String.fromCharCode(254)));
-	return biUTF8Decode(result);
-}
-
-function biUTF8Encode(string){
-// Base on:
-/*
- * jCryption JavaScript data encryption v1.0.1
- * http://www.jcryption.org/
- *
- * Copyright (c) 2009 Daniel Griesser
- * Dual licensed under the MIT and GPL licenses.
- * http://www.opensource.org/licenses/mit-license.php
- * http://www.opensource.org/licenses/gpl-2.0.php
- *
- * If you need any further information about this plugin please
- * visit my homepage or contact me under daniel.griesser@jcryption.org
- */
-	//string = string.replace(/\r\n/g,"\n");
-	var utftext = "";
-	var sl = string.length;
-	for (var n = 0; n < sl; n++){
-		var c = string.charCodeAt(n);
- 		if (c < 128){
-			utftext += String.fromCharCode(c);
-		}else if((c > 127) && (c < 2048)){
-				utftext += String.fromCharCode((c >> 6) | 192);
-				utftext += String.fromCharCode((c & 63) | 128);
-		}else{
-			utftext += String.fromCharCode((c >> 12) | 224);
-			utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-			utftext += String.fromCharCode((c & 63) | 128);
-		}
- 	}
- 	return utftext;
-}
+function biUTF8Encode(s)
+  do return s; end
+  --//string = string.replace(/\r\n/g,"\n");
+  local utftext = "";
+  local sl = s:len();
+  for n = 1, sl, 1 do
+    local c = s:byte(n);
+    if c < 128 then
+      utftext = utftext .. string.char(c);
+    elseif c > 127 and c < 2048 then
+        utftext = utftext .. string.char(math.floor(c / 64) + 192);
+        utftext = utftext .. string.char(c % 64 + 128);
+    else
+      utftext = utftext .. string.char(math.floor(c / 4096) + 224);
+      utftext = utftext .. string.char(math.floor(c / 64) % 64 + 128);
+      utftext = utftext .. string.char(c % 64 + 128);
+    end
+  end
+  return utftext;
+end
 
 function biUTF8Decode(s)
-	local utftext = "";
-	local sl = s:len();
-	local charCode;
-	local n = 0;
-	while n < sl do
-	local c = s:byte(n);
- 		if c < 128 then
-			utftext = utftext .. string.char(c);
-			charCode = 0;
-		elseif c > 191 and c < 224 then
-			charCode = c % 32 * 64;
-			n = n + 1;
-			c = s:byte(n);
-			charCode = charCode + c % 64;
-			utftext = utftext .. string.char(charCode);
-		else
-			charCode = c % 16 * 64 * 64;
-			n = n + 1;
-			c = s.byte(n);
-			charCode = charCode + c % 64 * 64);
-			n = n + 1;
-			c = s.byte(n);
-			charCode = charCode + c % 64;
-			utftext = utftext .. string.char(charCode);
-		end
- 	end
- 	return utftext;
+  do return s; end
+  local utftext = "";
+  local sl = s:len();
+  local charCode;
+  local n = 0;
+  while n < sl do
+  local c = s:byte(n);
+    if c < 128 then
+      utftext = utftext .. string.char(c);
+      charCode = 0;
+    elseif c > 191 and c < 224 then
+      charCode = c % 32 * 64;
+      n = n + 1;
+      c = s:byte(n);
+      charCode = charCode + c % 64;
+      utftext = utftext .. string.char(charCode);
+    else
+      charCode = c % 16 * 64 * 64;
+      n = n + 1;
+      c = s.byte(n);
+      charCode = charCode + c % 64 * 64;
+      n = n + 1;
+      c = s.byte(n);
+      charCode = charCode + c % 64;
+      utftext = utftext .. string.char(charCode);
+    end
+  end
+  return utftext;
 end
 
 function biRandomPadding(n)
-	local result = "";
-	for i = 0, n - 1, 1 do
-		result = result .. string.char(math.floor(math.random()*126) + 1);
-	end
-	return result;
+  local result = "";
+  for i = 0, n - 1, 1 do
+    result = result .. string.char(math.floor(math.random()*126) + 1);
+  end
+  return result;
 end
 
 
