@@ -73,7 +73,7 @@ function biMontgomeryPowMod(T, EXP, N){
 			result = biMontgomeryModulo(result, N)
 		}
 		m = biMultiply(m, m);
-		m = biMontgomeryModulo(m, N)
+		m = biMontgomeryModulo(m, N);
 	}
 	return result;
 }
@@ -87,7 +87,7 @@ function biMontgomeryModulo(T, N){
         m = biAdd(T, m);
         m  = biDivideByRadixPower(m, N.nN);
         while (biCompare(m, N) >= 0){
-                m = biSubtract(m, N);
+			m = biSubtract(m, N);
 		}
         return m;
 }
