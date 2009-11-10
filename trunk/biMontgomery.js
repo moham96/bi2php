@@ -79,16 +79,17 @@ function biMontgomeryPowMod(T, EXP, N){
 }
 
 function biMontgomeryModulo(T, N){
-        var m = biModuloByRadixPower(T, N.nN);
-        //m = biMultiply(m, N.Ninv);
-        //m = biModuloByRadixPower(m, N.nN);
-		m = biMultiplyModByRadixPower(m, N.Ninv, N.nN)
-        m = biMultiply(m, N);
-        m = biAdd(T, m);
-        m  = biDivideByRadixPower(m, N.nN);
-        while (biCompare(m, N) >= 0){
-			m = biSubtract(m, N);
-		}
-        return m;
+    var m = biModuloByRadixPower(T, N.nN);
+    //m = biMultiply(m, N.Ninv);
+    //m = biModuloByRadixPower(m, N.nN);
+	m = biMultiplyModByRadixPower(m, N.Ninv, N.nN);
+    m = biMultiply(m, N);
+    m = biAdd(T, m);
+    m = biDivideByRadixPower(m, N.nN);
+    while (biCompare(m, N) >= 0){
+		m = biSubtract(m, N);
+		break;
+	}
+    return m;
 }
 
