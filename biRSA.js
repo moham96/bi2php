@@ -44,8 +44,10 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.e = biFromHex(encryptionExponent);
 	this.d = biFromHex(decryptionExponent);
 	this.m = biFromHex(modulus);
-	this.chunkSize = 2 * biHighIndex(this.m);
-	this.radix = 16;
+	this.chunkSize = Math.floor((biNumBits(this.m) - 1) / 8 / 2);
+	this.chunkSize -= 	this.chunkSize % 6;
+	alert(this.chunkSize)
+	//this.radix = 48;
 	// for Montgomery algorythm
 	this.m.nN = biHighIndex(this.m) + 1;
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
@@ -86,7 +88,11 @@ function biEncryptedString(s){
 		j = 0;
 		for (k = i; k < i + this.chunkSize && k < sl; ++j) {
 			block.digits[j] = s.charCodeAt(k++);
-			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
+			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 8);
+			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 16);
+			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 24);
+			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 32);
+			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 40);
 		}
 		var crypt = biMontgomeryPowMod(block, this.e, this.m);
 		var text = biToHex(crypt);
@@ -104,8 +110,19 @@ function biDecryptedString(s){
 		bi = biFromHex(blocks[i], 10);
 		block = biMontgomeryPowMod(bi, this.d, this.m);
 		for (j = 0; j <= biHighIndex(block); ++j) {
-			result += String.fromCharCode(block.digits[j] & 255,
-			                              block.digits[j] >> 8);
+			var chr = block.digits[j];
+			result += String.fromCharCode(chr % 256);
+			chr = Math.floor(chr / 256);
+			result += String.fromCharCode(chr % 256);
+			chr = Math.floor(chr / 256);
+			result += String.fromCharCode(chr % 256);
+			chr = Math.floor(chr / 256);
+			result += String.fromCharCode(chr % 256);
+			chr = Math.floor(chr / 256);
+			result += String.fromCharCode(chr % 256);
+			chr = Math.floor(chr / 256);
+			result += String.fromCharCode(chr % 256);
+			//alert(chr)
 		}
 	}
 	result = result.replace(/\xff/gm, String.fromCharCode(0));
@@ -113,7 +130,7 @@ function biDecryptedString(s){
 	return biUTF8Decode(result);
 }
 
-function biUTF8Encode(string){
+function biUTF8Encode(string){return string;
 // Base on:
 /* 
  * jCryption JavaScript data encryption v1.0.1
@@ -146,7 +163,7 @@ function biUTF8Encode(string){
  	return utftext;
 }
 
-function biUTF8Decode(s){
+function biUTF8Decode(s){ return s;
 	var utftext = "";
 	var sl = s.length;
 	var charCode;
