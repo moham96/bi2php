@@ -38,9 +38,11 @@ function biExtendedEuclid(a, b){
 	return [ result[1], result[0], result[2] ];
 }
 
-function biExtendedEuclidNatural(a, b){
+function biExtendedEuclidNatural(a0, b0){
 // calculates a * x + b * y = gcd(a, b) 
 // require a >= b
+	var a = a0;
+	var b = b0;
 	var qr, q, r, x1, x2, y1, y2, x, y;
 	if (b.isZero())
 		return [biFromNumber(1), biFromNumber(0), a];
@@ -61,6 +63,7 @@ function biExtendedEuclidNatural(a, b){
 		y2 = y1;
 		y1 = y;
 	}
+	alert("gcd"+biDump(biAdd(biMultiply(x2,a0),biMultiply(y2,b0))))
 	return [x2, y2, a];
 }
 
