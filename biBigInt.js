@@ -71,17 +71,18 @@ THE SOFTWARE.
 // claim.
 
 var biRadixBase = 2;
-var biRadixBits = 16;
+var biRadixBits = 24;
     biRadixBits = biRadixBits - biRadixBits % 4;
 var bitsPerDigit = biRadixBits;
-var biRadix = 1 << biRadixBits; // = 2^16 = 65536
-var biHalfRadix = biRadix >>> 1;
+var biRadix = Math.pow(biRadixBase, biRadixBits); // = 2^16 = 65536
+var biHalfRadix = biRadix / 2;
 var biRadixSquared = biRadix * biRadix;
 var maxDigitVal = biRadix - 1;
 var maxInteger = 4294967295; 
 var biHexPerDigit = biRadixBits / 4;
 var bigZero = biFromNumber(0);
 var bigOne = biFromNumber(1);
+var psi = 0.0001;
 
 // The maximum number of digits in base 10 you can convert to an
 // integer without JavaScript throwing up on you.
@@ -89,97 +90,103 @@ var dpl10 = 9;
 // lr10 = 10 ^ dpl10
 var lr10 = biFromNumber(1000000000);
 
-function BigInt(i){
-	this.isNeg = false;
-	if (i == -1)
-		return;
-	if (i){
-		this.digits = new Array(i);
-		while (i)
-			this.digits[--i] = 0;
-	}else
-		this.digits = [0];
+function biBigInt(i){
+	var digits = [];
+	digits.isNeg = false;
+	i = biIF(i, 1)
+	while (i > 0)
+		digits[--i] = 0;
+	return digits;	
 }
 
-BigInt.prototype.isZero = function(){
-	return this.digits[0] == 0 && biNormalize(this).digits.length == 1;
+function biRoundZero(i){
+	return Math.abs(i) < psi;
 }
 
-BigInt.prototype.isOne = function(){
-	return this.digits[0] == 1 && !this.isNeg && biNormalize(this).digits.length == 1;
+function biRoundOne(i){
+	return Math.abs(i - 1) < psi;
 }
 
-BigInt.prototype.isEqual = function(bis){
-	if (this.isNeg != bis.isNeg)
+function biRoundEqual(x, y){
+	return Math.abs(x - y) < psi;
+}
+
+function biRoundGEqual(x, y){
+	return x >= y - psi;
+}
+
+function biRoundLEqual(x, y){
+	return x <= y + psi;
+}
+
+function biIsZero(digits){
+	return biRoundZero(digits[0]) && biNormalize(digits).length == 1;
+}
+
+function biIsOne(digits){
+	return biRoundOne(digits[0]) && !digits.isNeg && biNormalize(digits).length == 1;
+}
+
+function biIsEqual(x, y){
+	if (biIsZero(x) && biIsZero(y))
+		return true;
+	if (x.isNeg != y.isNeg)
 		return false;
-	if (this.digits.length != bis.digits.length)
+	if (x.length != y.length)
 		return false;
-	for (var i = this.digits.length - 1; i > -1; i--)
-		if (this.digits[i] != bis.digits[i])
+	for (var i = x.length - 1; i > -1; i--)
+		if (! biRoundEqual(x[i], y[i]))
 			return false;
 	return true;
 }
 
-BigInt.prototype.blankZero = function(){
-	this.isNeg = false;
-	this.digits.length = 1;
-	this.digits[0] = 0;
+function biBlankZero(digits){
+	digits.isNeg = false;
+	digits.length = 1;
+	digits[0] = 0;
 }
 
-BigInt.prototype.blankOne = function(){
-	this.isNeg = false;
-	this.digits.length = 1;
-	this.digits[0] = 1;
+function biBlankOne(digits){
+	digits.isNeg = false;
+	digits.length = 1;
+	digits[0] = 1;
 }
 
-BigInt.prototype.blankEmpty = function(){
-	this.isNeg = false;
-	this.digits.length = 0;
+function biBlankEmpty(digits){
+	digits.isNeg = false;
+	digits.length = 0;
 }
 
 function biCopy(bi){
-	var result = new BigInt(-1);
-	result.digits = bi.digits.slice(0);
+	var result = bi.slice(0);
 	result.isNeg = bi.isNeg;
 	return result;
 }
 
 function biAbs(bi){
-	var result = new BigInt(-1);
-	result.digits = bi.digits.slice(0);
+	var result = bi.slice(0);
 	result.isNeg = false;
 	return result;
 }
 
 function biMinus(bi){
-	var result = new BigInt(-1);
-	result.digits = bi.digits.slice(0);
+	var result = bi.slice(0);
 	result.isNeg = !bi.isNeg;
 	return result;
 }
 
 function biFromNumber(i){
-	if (Math.abs(i) > maxInteger)
-		return (biFromFloat(i));
-	var result = new BigInt();
-	if (result.isNeg = i < 0)
-		i = -i;
-	var j = 0;
-	while (i > 0){
-		result.digits[j++] = i & maxDigitVal;
-		i >>>= biRadixBits;
-	}
-	return result;
+	return (biFromFloat(i));
 }
 
 function biFromFloat(i){
-	var result = new BigInt();
-	if (result.isNeg = i < 0)
+	var result = biBigInt();
+	if (result.isNeg = (i < 0))
 		i = -i;
 	var j = 0;
 	while (i > 0){
 		var c = Math.floor(i / biRadix);
-		result.digits[j++] = i - c * biRadix;
+		result[j++] = i % biRadix;
 		i = c;
 	}
 	return result;
@@ -189,10 +196,10 @@ function biFromString(s, radix){
 	if (radix == 16)
 		return biFromHex(s);
 	var isNeg = s.charAt(0) == '-';
-	var first = (isNeg ? 1 : 0) - 1;
-	var result = new BigInt();
+	var first = (isNeg ? 1 : 0);
+	var result = biBigInt();
 	var place = biCopy(bigOne);
-	for (var i = s.length - 1; i > first; i--){
+	for (var i = s.length - 1; i > first - 1; i--){
 		var c = s.charCodeAt(i);
 		var digit = charToHex(c);
 		var biDigit = biMultiplyDigit(place, digit);
@@ -208,16 +215,16 @@ function biFromDecimal(s){
 }
 
 function biFromHex(s){
-	var result = new BigInt();
+	var result = biBigInt();
 	if (s.charAt(0) == '-'){
 		result.isNeg = true;
-		s = substr(s, 1);
+		s = s.substr(1);
 	}else{
 		result.isNeg = false;
 	}
 	var sl = s.length;
 	for (var i = sl, j = 0; i > 0; i -= biHexPerDigit, j++)
-		result.digits[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
+		result[j] = hexToDigit(s.substr(Math.max(i - biHexPerDigit, 0), Math.min(i, biHexPerDigit)));
 	return biNormalize(result);
 }
 
@@ -241,10 +248,10 @@ function biToString(x, radix){
 		return biToHex(x);
 	var b = biFromNumber(radix);
 	var qr = biDivideModulo(biAbs(x), b);
-	var result = hexatrigesimalToChar[qr[1].digits[0]];
-	while (!qr[0].isZero()){
+	var result = hexatrigesimalToChar[qr[1][0]];
+	while (!biIsZero(qr[0])){
 		qr = biDivideModulo(qr[0], b);
-		result += hexatrigesimalToChar[qr[1].digits[0]];
+		result += hexatrigesimalToChar[qr[1][0]];
 	}
 	return (x.isNeg ? "-" : "") + reverseStr(result);
 }
@@ -257,11 +264,10 @@ var hexToChar = new Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                           'a', 'b', 'c', 'd', 'e', 'f');
 
 function digitToHex(n){
-	var mask = 0xf;
 	var result = "";
 	for (var i = 0; i < biHexPerDigit; i++){
-		result += hexToChar[n & mask];
-		n >>>= 4;
+		result += hexToChar[n % 16];
+		n = Math.floor(n / 16);
 	}
 	return reverseStr(result);
 }
@@ -269,11 +275,10 @@ function digitToHex(n){
 function digitToHexTrunk(n){
 	if (n == 0)
 		return "0";
-	var mask = 0xf;
 	var result = "";
 	for (var i = 0; i < biHexPerDigit && n > 0; i++){
-		result += hexToChar[n & mask];
-		n >>>= 4;
+		result += hexToChar[n % 16];
+		n = Math.floor(n / 16);
 	}
 	return reverseStr(result);
 }
@@ -281,9 +286,9 @@ function digitToHexTrunk(n){
 function biToHex(x){
 	var result = x.isNeg ? "-" : "";
 	var i = biHighIndex(x);
-	result += digitToHexTrunk(x.digits[i--]);
+	result += digitToHexTrunk(x[i--]);
 	while (i > -1) 
-		result += digitToHex(x.digits[i--]);
+		result += digitToHex(x[i--]);
 	return result;
 }
 
@@ -292,7 +297,7 @@ function biToNumber(x){
 	var faktor = 1;
 	var k = biHighIndex(x) + 1;
 	for (var i = 0; i < k; i++){
-		result += x.digits[i] * faktor;
+		result += x[i] * faktor;
 		faktor *= biRadix;
 	}
 	return x.isNeg ? -result : result;
@@ -321,58 +326,54 @@ function hexToDigit(s){
 	var result = 0;
 	var sl = Math.min(s.length, biHexPerDigit);
 	for (var i = 0; i < sl; i++) {
-		result <<= 4;
-		result |= charToHex(s.charCodeAt(i))
+		result *= 16;
+		result += charToHex(s.charCodeAt(i))
 	}
 	return result;
 }
 
 function biDump(b){
-	return (b.isNeg ? "minus " : "plus ") + b.digits.join(" ");
+	return (b.isNeg ? "minus " : "plus ") + b.join(" ");
 }
 
 function biNormalize(x){
-	var k = x.digits.length;
-	if (x.digits[k - 1] != 0 && !isNaN(x.digits[k - 1]))
-		return x;		
+	var k = x.length;
 	for (var i = k - 1; i > 0; i--)
-		if (x.digits[i] == 0 || isNaN(x.digits[i])) // todo
-			x.digits.pop();
+		if (biRoundZero(x[i]) || isNaN(x[i])) // todo
+			x.pop();
 		else
 			return x;
-	if (x.digits.length == 1 && x.digits[0] == 0)
+	if (x.length == 1 && biRoundZero(x[0]))
 		x.isNeg = false;
-	if (isNaN(x.digits[0]))
+	if (isNaN(x[0]))
 		throw new Error("Undefined BigInt: " + biDump(x));
 	return x;
 }
 
 function biHighIndex(x){
 	biNormalize(x);
-	return x.digits.length - 1;
+	return x.length - 1;
 }
 
 function biNumBits(x){
 	var n = biHighIndex(x);
-	var d = x.digits[n];
-	var m = (n + 1) * bitsPerDigit;
-	var result;
-	for (result = m; result > m - bitsPerDigit; result--){
-		if ((d & biHalfRadix) != 0)
-			break;
-		d <<= 1;
+	var d = x[n];
+	var m = n * bitsPerDigit;
+	while (d){
+		m++;
+		d = Math.floor(d / 2);
 	}
-	return result;
+	return m;
 }
 
 function biCompareAbs(x, y){
 	var nx = biHighIndex(x);
 	var ny = biHighIndex(y);
-	if (nx != ny)
-		return 1 - 2 * ((nx < ny) ? 1 : 0);
-	for (var i = x.digits.length - 1; i > -1; i--)
-		if (x.digits[i] != y.digits[i])
-			return 1 - 2 * ((x.digits[i] < y.digits[i]) ? 1 : 0);
+	if (! biRoundEqual(nx, ny))
+		return 1 - 2 * (biRoundLEqual(nx, ny) ? 1 : 0);
+	for (var i = x.length - 1; i > -1; i--)
+		if (! biRoundEqual(x[i], y[i]))
+			return 1 - 2 * (biRoundLEqual(x[i], y[i]) ? 1 : 0);
 	return 0;
 }
 
@@ -397,21 +398,21 @@ function biAddNatural(x, y){
 		var k = nx;
 	}
 	while (i < k){
-		result.digits[i] += source.digits[i] + c;
-		if (result.digits[i] < biRadix){
+		result[i] += source[i] + c;
+		if (result[i] < biRadix - psi){
 			c = 0;
 		}else{
-			result.digits[i] %= biRadix;//&= maxDigitVal;
+			result[i] %= biRadix;
 			c = 1;
 		}
 		i++;
 	}
 	while (c > 0){
-		result.digits[i] = (result.digits[i] || 0) + c;
-		if (result.digits[i] < biRadix){
+		result[i] = biIF(result[i], 0) + c;
+		if (result[i] < biRadix - psi){
 			c = 0;
 		}else{
-			result.digits[i] %= biRadix;//&= maxDigitVal;
+			result[i] %= biRadix;
 			c = 1;
 		}
 		i++;
@@ -424,29 +425,30 @@ function biSubtractNatural(x, y){
 	var nx = biHighIndex(x) + 1;
 	var ny = biHighIndex(y) + 1;
 	var result = biAbs(x);
-	var resultdigits = result.digits;
-	var xdigits = x.digits;
-	var ydigits = y.digits;	
 	var c = 0;
-	for (var i = 0; i < ny ; i++){
-		if (xdigits[i] >= ydigits[i] + c){
-			resultdigits[i] = xdigits[i] - ydigits[i] - c;
+	for (var i = 0; i < ny; i++){
+		if (biRoundGEqual(x[i], y[i] + c)){
+		//if (x[i] >= y[i] + c){
+			result[i] = Math.round(x[i] - y[i] - c);
 			c = 0;
 		}else{
-			resultdigits[i] = biRadix + xdigits[i] - ydigits[i] - c;
+			result[i] = Math.round(biRadix + x[i] - y[i] - c);
 			c = 1;		
 		}		
 	}
-	while (c > 0 && i < nx){
-		if (xdigits[i] >= c){
-			resultdigits[i] = xdigits[i] - c;
+	while (!biRoundZero(c) && i < nx){
+		if (biRoundGEqual(x[i], c)){
+		//if (x[i] >= c){
+			result[i] = Math.round(x[i] - c);
 			c = 0;
 		}else{
-			resultdigits[i] = biRadix + xdigits[i] - c;
+			result[i] = Math.round(biRadix + x[i] - c);
 			c = 1;		
 		}		
 		i++;
-	}	
+	}
+	if (c)
+	alert(biToHex(x)+"-\n"+biToHex(y)+"=\n"+biToHex(result))
 	return biNormalize(result);
 }
 
@@ -461,7 +463,7 @@ function biAdd(x, y){
 	}
 	var x_y = biCompareAbs(x , y); 
 	if (x_y == 0)
-		return biFromNumber(0);
+		return biCopy(bigZero);
 	if (x_y > 0){
 		result = biSubtractNatural(x, y);
 		result.isNeg = x.isNeg;
@@ -485,7 +487,7 @@ function biSubtract(x, y){
 	var x_y = biCompareAbs(x , y);
 	if (x_y == 0)
 		return biCopy(bigZero);
-		if (x_y > 0){
+	if (x_y > 0){
 		result = biSubtractNatural(x, y);
 		result.isNeg = x.isNeg;
 	}
@@ -500,21 +502,18 @@ function biMultiply(x, y){
 	var c, u, uv, k;
 	var n = biHighIndex(x) + 1;
 	var t = biHighIndex(y) + 1;
-	if (n == 1 && x.digits[0] == 0 || t == 1 && y.digits[0] == 0)
-		return new BigInt();
-	var result = new BigInt(n + t);
-	var resultdigits = result.digits;
-	var xdigits = x.digits;
-	var ydigits = y.digits;
+	if (biIsZero(x) || biIsZero(y))
+		return biCopy(bigZero);
+	var result = biBigInt(n + t);
 	for (var i = 0; i < t; i++) {
 		c = 0;
 		k = i;
 		for (var j = 0; j < n; j++, k++) {
-			uv = resultdigits[k] + xdigits[j] * ydigits[i] + c;
-			resultdigits[k] = uv & maxDigitVal;
-			c = uv >>> biRadixBits;
+			uv = (result[k] % biRadix + (x[j] % biRadix)  * (y[i] % biRadix) + c % biRadix);
+			c = Math.floor((result[k] + x[j] * y[i] + c) / biRadix);
+			result[k] = Math.round(uv)  % biRadix;
 		}
-		resultdigits[i + n] = c;
+		result[i + n] = c;
 	}
 	result.isNeg = x.isNeg != y.isNeg;
 	return biNormalize(result);
@@ -522,19 +521,19 @@ function biMultiply(x, y){
 
 function biMultiplyDigit(x, y){
 	var n = biHighIndex(x) + 1;
-	if (y == 0)
-		return new BigInt(n);
-	if (y == 1)
+	if (biRoundZero(y))
+		return biCopy(bigZero);
+	if (biRoundOne(y))
 		return biCopy(x);
-	var result = new BigInt(n);
+	var result = biBigInt(n);
 	var c = 0;
 	for (var j = 0; j < n; j++){
-		var uv = /*result.digits[j] + */x.digits[j] * y + c;
-		result.digits[j] = uv & maxDigitVal;
-		c = uv >>> biRadixBits;
+		var uv = x[j] * y + c;
+		result[j] = uv % biRadix;
+		c = Math.floor(uv / biRadix);
 	}
 	if (c)
-		result.digits[n] = c;
+		result[n] = c;
 	return result;
 }
 
@@ -552,7 +551,7 @@ function arrayCopy(src, srcStart, dest, destStart, count){
 		dest[j] = src[i];
 }
 
-function biShiftLeft(x, n){
+function biShiftLeft0(x, n){
 	var digitCount = Math.floor(n / bitsPerDigit);
 	var result = new BigInt();
 	arrayCopy(x.digits, 0, result.digits, digitCount, x.digits.length);
@@ -566,7 +565,7 @@ function biShiftLeft(x, n){
 	return biNormalize(result);
 }
 
-function biShiftRight(x, n){
+function biShiftRight0(x, n){
 	var digitCount = Math.floor(n / bitsPerDigit);
 	var result = new BigInt();
 	arrayCopy(x.digits, digitCount, result.digits, 0, x.digits.length - digitCount);
@@ -580,20 +579,20 @@ function biShiftRight(x, n){
 }
 
 function biMultiplyByRadixPower(x, n){
-	var result = new BigInt();
-	arrayCopy(x.digits, 0, result.digits, n, x.digits.length);
+	var result = biBigInt();
+	arrayCopy(x, 0, result, n, x.length);
 	return result;
 }
 
 function biDivideByRadixPower(x, n){
-	var result = new BigInt();
-	arrayCopy(x.digits, n, result.digits, 0, x.digits.length - n);
+	var result = biBigInt();
+	arrayCopy(x, n, result, 0, x.length - n);
 	return result;
 }
 
 function biModuloByRadixPower(x, n){
-	var result = new BigInt();
-	arrayCopy(x.digits, 0, result.digits, 0, n);
+	var result = biBigInt();
+	arrayCopy(x, 0, result, 0, n);
 	return result;
 }
 
@@ -601,21 +600,18 @@ function biMultiplyModByRadixPower(x, y, p){
 	var c, u, uv, k;
 	var n = biHighIndex(x) + 1;
 	var t = biHighIndex(y) + 1;
-	if (n == 1 && x.digits[0] == 0 || t == 1 && y.digits[0] == 0)
-		return new BigInt();
-	var result = new BigInt(p);
-	var resultdigits = result.digits;
-	var xdigits = x.digits;
-	var ydigits = y.digits;
+	if (biIsZero(x) || biIsZero(y))
+		return biCopy(bigZero);
+	var result = biBigInt(p);
 	for (var i = 0; i < t && i < p; i++) {
 		c = 0;
 		k = i;
 		for (j = 0; j < n && k < p; j++, k++) {
-			uv = resultdigits[k] + xdigits[j] * ydigits[i] + c;
-			resultdigits[k] = uv & maxDigitVal;
-			c = uv >>> biRadixBits;
+			uv = result[k] + x[j] * y[i] + c;
+			result[k] = uv % biRadix;
+			c = Math.floor(uv / biRadix);
 		}
-		resultdigits[i + n] = c;
+		result[i + n] = c;
 	}
 	result = biModuloByRadixPower(result, p)
 	result.isNeg = x.isNeg != y.isNeg;
@@ -634,30 +630,28 @@ function biDivideModuloNatural(x, y){
     var jm, qm, flag;
     var nx = biHighIndex(x);
     var ny = biHighIndex(y);
-    var q = new BigInt(-1);
-        q.digits = [];
-    var r = new BigInt();
-        //r.digits = [0]
+    var q = biBigInt(-1);
+    var r = biBigInt();
     for (var i = nx; i > -1; i--){
-        r.digits.unshift(x.digits[i]);
+        r.unshift(x[i]);
 		flag = biCompareAbs(y, r);
         if (flag > 0){
-            q.digits.unshift(0);
+            q.unshift(0);
             continue;
         }
 		if (flag == 0){
-            q.digits.unshift(1);
-			r.blankZero();
+            q.unshift(1);
+			biBlankZero(r);
             continue;
 		}
 		var nr = biHighIndex(r);
 		if (nr == ny)
-            jm = Math.floor((r.digits[nr] * biRadix + biIF(r.digits[nr - 1], 0)) / 
-								(y.digits[ny] * biRadix + biIF(y.digits[ny - 1], 0)));
+            jm = Math.floor((r[nr] * biRadix + biIF(r[nr - 1], 0)) / 
+								(y[ny] * biRadix + biIF(y[ny - 1], 0)));
 		else
-            jm = Math.floor((r.digits[nr] * biRadixSquared + biIF(r.digits[nr - 1], 0) * biRadix + biIF(r.digits[nr - 2], 0)) /
-								(y.digits[ny] * biRadix + biIF(y.digits[ny - 1], 0)));
-		jm = Math.max(0, Math.min(jm, maxDigitVal));					
+            jm = Math.floor((r[nr] * biRadixSquared + biIF(r[nr - 1], 0) * biRadix + biIF(r[nr - 2], 0)) /
+								(y[ny] * biRadix + biIF(y[ny - 1], 0)));
+		jm = Math.max(0, Math.min(jm, maxDigitVal));	
 		qm = biMultiplyDigit(y, jm);
 		r = biSubtract(r, qm);
 		if (r.isNeg)
@@ -670,7 +664,7 @@ function biDivideModuloNatural(x, y){
 				r = biSubtract(r, y);
 				jm++;
 			}
-        q.digits.unshift(jm);
+        q.unshift(jm);
     }
     return [biNormalize(q), biNormalize(r)];
 }
@@ -680,7 +674,7 @@ function biDivideModulo(x, y){
 	if (biCompareAbs(x, y) < 0) {
 		// |x| < |y|
 		if ((x.isNeg && y.isNeg) || (!x.isNeg && !y.isNeg)){
-			q = biFromNumber(0);
+			q = biCopy(bigZero);
 			r = biCopy(x);
 		}else{
 			q = biFromNumber(-1);
@@ -704,8 +698,10 @@ function biDivideModulo(x, y){
 		r.isNeg = origXIsNeg;
 		r = biAdd(r, y);
 	}
-	if (r.digits[0] == 0 && biHighIndex(r) == 0) 
+	if (biIsZero(r)) 
 		r.isNeg = false;
+	if (biIsZero(q)) 
+		q.isNeg = false;
 	return [q, r];
 }
 
@@ -725,10 +721,10 @@ function biPow(x, y){
 	var result = biCopy(bigOne);
 	var a = x;
 	while (true) {
-		if ((y & 1) != 0) 
+		if (!biRoundZero(y % 2)) 
 			result = biMultiply(result, a);
-		y >>>= 1;
-		if (y == 0)
+		y = Math.floor(y / 2);
+		if (biRoundZero(y))
 			break;
 		a = biMultiply(a, a);
 	}
@@ -740,10 +736,10 @@ function biPowMod(x, y, m){
 	var a = x;
 	var k = y;
 	while (true){
-		if ((k.digits[0] & 1) != 0) 
+		if (!biRoundZero(k[0] % 2)) 
 			result = biMultiplyMod(result, a, m);
 		k = biShiftRight(k, 1);
-		if (k.digits[0] == 0 && biHighIndex(k) == 0) 
+		if (biRoundZero(k[0]) && biHighIndex(k) == 0) 
 			break;
 		a = biMultiplyMod(a, a, m);
 	}
@@ -751,8 +747,8 @@ function biPowMod(x, y, m){
 }
 
 function biRandom(n){
-	var result = new BigInt();
+	var result = biBigInt();
 	while (n--)
-		result.digits[n] = Math.floor(Math.random() * maxDigitVal);
+		results[n] = Math.floor(Math.random() * maxDigitVal);
 	return result;
 }
