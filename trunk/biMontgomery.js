@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-// bi2php v0.1.112.alfa from http://code.google.com/p/bi2php/
+// bi2php v0.1.113.alfa from http://code.google.com/p/bi2php/
 
 function biModularInverse(e, m){
 	e = biModulo(e, m);
@@ -38,11 +38,9 @@ function biExtendedEuclid(a, b){
 	return [ result[1], result[0], result[2] ];
 }
 
-function biExtendedEuclidNatural(a0, b0){
+function biExtendedEuclidNatural(a, b){
 // calculates a * x + b * y = gcd(a, b) 
 // require a >= b
-	var a = a0;
-	var b = b0;
 	var qr, q, r, x1, x2, y1, y2, x, y;
 	if (b.isZero())
 		return [biFromNumber(1), biFromNumber(0), a];
@@ -63,7 +61,6 @@ function biExtendedEuclidNatural(a0, b0){
 		y2 = y1;
 		y1 = y;
 	}
-	alert("gcd"+biDump(biAdd(biMultiply(x2,a0),biMultiply(y2,b0))))
 	return [x2, y2, a];
 }
 
@@ -76,23 +73,22 @@ function biMontgomeryPowMod(T, EXP, N){
 			result = biMontgomeryModulo(result, N)
 		}
 		m = biMultiply(m, m);
-		m = biMontgomeryModulo(m, N);
+		m = biMontgomeryModulo(m, N)
 	}
 	return result;
 }
 
 function biMontgomeryModulo(T, N){
-    var m = biModuloByRadixPower(T, N.nN);
-    //m = biMultiply(m, N.Ninv);
-    //m = biModuloByRadixPower(m, N.nN);
-	m = biMultiplyModByRadixPower(m, N.Ninv, N.nN);
-    m = biMultiply(m, N);
-    m = biAdd(T, m);
-    m = biDivideByRadixPower(m, N.nN);
-    while (biCompare(m, N) >= 0){
-		m = biSubtract(m, N);
-		break;
-	}
-    return m;
+        var m = biModuloByRadixPower(T, N.nN);
+        //m = biMultiply(m, N.Ninv);
+        //m = biModuloByRadixPower(m, N.nN);
+		m = biMultiplyModByRadixPower(m, N.Ninv, N.nN)
+        m = biMultiply(m, N);
+        m = biAdd(T, m);
+        m  = biDivideByRadixPower(m, N.nN);
+        while (biCompare(m, N) >= 0){
+                m = biSubtract(m, N);
+		}
+        return m;
 }
 

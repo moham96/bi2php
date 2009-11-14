@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-// bi2php v0.1.112.alfa from http://code.google.com/p/bi2php/
+// bi2php v0.1.113.alfa from http://code.google.com/p/bi2php/
 // Base on dave@ohdave.com
 // Now requires BigInt.js and Montgomery.js
 
@@ -44,10 +44,8 @@ function biRSAKeyPair(encryptionExponent, decryptionExponent, modulus){
 	this.e = biFromHex(encryptionExponent);
 	this.d = biFromHex(decryptionExponent);
 	this.m = biFromHex(modulus);
-	this.chunkSize = Math.floor((biNumBits(this.m) - 1) / 8 / 2);
-	this.chunkSize -= 	this.chunkSize % 6;
-	alert(this.chunkSize)
-	//this.radix = 48;
+	this.chunkSize = 2 * biHighIndex(this.m);
+	this.radix = 16;
 	// for Montgomery algorythm
 	this.m.nN = biHighIndex(this.m) + 1;
 	this.m.R = biMultiplyByRadixPower(biFromNumber(1), this.m.nN);
@@ -88,11 +86,7 @@ function biEncryptedString(s){
 		j = 0;
 		for (k = i; k < i + this.chunkSize && k < sl; ++j) {
 			block.digits[j] = s.charCodeAt(k++);
-			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 8);
-			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 16);
-			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 24);
-			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 32);
-			block.digits[j] += biIF(s.charCodeAt(k++), 0) * Math.pow(2, 40);
+			block.digits[j] += (s.charCodeAt(k++) || 0) << 8;
 		}
 		var crypt = biMontgomeryPowMod(block, this.e, this.m);
 		var text = biToHex(crypt);
@@ -110,19 +104,8 @@ function biDecryptedString(s){
 		bi = biFromHex(blocks[i], 10);
 		block = biMontgomeryPowMod(bi, this.d, this.m);
 		for (j = 0; j <= biHighIndex(block); ++j) {
-			var chr = block.digits[j];
-			result += String.fromCharCode(chr % 256);
-			chr = Math.floor(chr / 256);
-			result += String.fromCharCode(chr % 256);
-			chr = Math.floor(chr / 256);
-			result += String.fromCharCode(chr % 256);
-			chr = Math.floor(chr / 256);
-			result += String.fromCharCode(chr % 256);
-			chr = Math.floor(chr / 256);
-			result += String.fromCharCode(chr % 256);
-			chr = Math.floor(chr / 256);
-			result += String.fromCharCode(chr % 256);
-			//alert(chr)
+			result += String.fromCharCode(block.digits[j] & 255,
+			                              block.digits[j] >> 8);
 		}
 	}
 	result = result.replace(/\xff/gm, String.fromCharCode(0));
@@ -130,7 +113,7 @@ function biDecryptedString(s){
 	return biUTF8Decode(result);
 }
 
-function biUTF8Encode(string){return string;
+function biUTF8Encode(string){
 // Base on:
 /* 
  * jCryption JavaScript data encryption v1.0.1
@@ -163,7 +146,7 @@ function biUTF8Encode(string){return string;
  	return utftext;
 }
 
-function biUTF8Decode(s){ return s;
+function biUTF8Decode(s){
 	var utftext = "";
 	var sl = s.length;
 	var charCode;
